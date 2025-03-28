@@ -1,19 +1,25 @@
-import { Box, Drawer, useTheme } from "@mui/material";
+import { Box, Drawer, useTheme, useMediaQuery } from "@mui/material";
 
 const SidebarDrawer = ({
   isSidebarOpen,
   setIsSidebarOpen,
   drawerWidth,
   children,
+  onBackdropClick,
 }) => {
   const theme = useTheme();
+  const isNonMobile = useMediaQuery("(min-width : 600px)");
 
   return (
     <Drawer
       open={isSidebarOpen}
       onClose={() => setIsSidebarOpen(false)}
-      variant="persistent"
+      variant={isNonMobile ? "persistent" : "temporary"}
       anchor="left"
+      ModalProps={{
+        keepMounted: true, // Better performance on mobile
+        onBackdropClick: onBackdropClick || (() => setIsSidebarOpen(false)),
+      }}
       sx={{
         flexShrink: 0,
         width: drawerWidth,

@@ -112,7 +112,7 @@ export default function UploadAvatar({ error, file, helperText, sx, onFileChange
             src={isString(file) && file.startsWith('data:') 
               ? file // If it's a base64 string, use as is
               : isString(file) && !file.startsWith('http') 
-                ? `http://localhost:8000${file.startsWith('/') ? '' : '/'}${file}` // If it's a path, prepend API URL
+                ? `https://e-mithru-backend.fly.dev${file.startsWith('/') ? '' : '/'}${file}` // If it's a path, prepend API URL
                 : file.preview || URL.createObjectURL(file) // If it's a file object
             }
             sx={{ zIndex: 8 }} 
