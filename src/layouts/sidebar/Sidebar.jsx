@@ -14,6 +14,7 @@ const Sidebar = ({
   isSidebarOpen,
   setIsSidebarOpen,
   isNonMobile,
+  onBackdropClick,
 }) => {
   const { pathname } = useLocation();
   const [active, setActive] = useState("dashboard");
@@ -41,6 +42,7 @@ const Sidebar = ({
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
           drawerWidth={drawerWidth}
+          onBackdropClick={onBackdropClick}
         >
           <Box display="flex" alignSelf="center">
             <img

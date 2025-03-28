@@ -67,6 +67,9 @@ export default function AddStudents() {
             avatar: null,
             role: roleId,
             roleName: trimmedEntry.role.toLowerCase(),
+            department: trimmedEntry.department,
+            sem: trimmedEntry.sem,
+            usn: trimmedEntry.usn
           };
           const nameParts = userData.name.split(' ');
           const firstName = nameParts[0];
