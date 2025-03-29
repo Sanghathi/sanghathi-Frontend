@@ -71,23 +71,25 @@ const NewThreadDialog = ({ open, onClose, users, currentUser, onSave }) => {
 
   const handleAddMember = (member) => {
     if (!newThreadData.participants.find((m) => m._id === member._id)) {
-      setNewThreadData({
-        ...newThreadData,
-        participants: [...newThreadData.participants, member],
-      });
+      setNewThreadData((prevState) => ({
+        ...prevState,
+        participants: [...prevState.participants, member],
+      }));
     }
+
+    setSearchTerm("");
+    setFilteredUsers([]);
   };
 
-  const handleRemoveMember = (memberId) => {
-    if (memberId === currentUser._id) {
-      return; // Prevents removal of the current user
-    }
-    setNewThreadData({
-      ...newThreadData,
-      participants: newThreadData.participants.filter(
+  const handleDeselectMember = (memberId) => {
+    if (memberId === currentUser._id) return;
+
+    setNewThreadData((prevState) => ({
+      ...prevState,
+      participants: prevState.participants.filter(
         (participant) => participant._id !== memberId
       ),
-    });
+    }));
   };
 
   const handleSave = () => {
@@ -192,32 +194,25 @@ const NewThreadDialog = ({ open, onClose, users, currentUser, onSave }) => {
         </Typography>
         <List>
           {newThreadData.participants.map((participant) => (
-            <ListItem key={participant._id} sx={{ cursor: "pointer" }}>
-              <Avatar
-                sx={{
-                  position: "relative",
-                  "&:hover > .MuiIconButton-root": {
-                    visibility: "visible",
-                  },
-                }}
-              >
-                {participant.name[0]}
+            <ListItem
+              key={participant._id}
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Avatar>{participant.name[0]}</Avatar>
+                <ListItemText sx={{ ml: 2 }} primary={participant.name} />
+              </Box>
+              {participant._id !== currentUser._id && (
                 <IconButton
-                  sx={{
-                    visibility: "hidden",
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    bgcolor: "rgba(0,0,0,0.5)",
-                  }}
-                  onClick={() => handleRemoveMember(participant._id)}
+                  onClick={() => handleDeselectMember(participant._id)}
                 >
-                  <Close sx={{ color: "white" }} />
+                  <Close />
                 </IconButton>
-              </Avatar>
-              <ListItemText sx={{ ml: 2 }} primary={participant.name} />
+              )}
             </ListItem>
           ))}
         </List>
