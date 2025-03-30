@@ -72,13 +72,20 @@ const Report = () => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
+
+  useEffect(() => {
+    setThreads([...threads]);
+  }, [fromDate, toDate]);
 
   const handleFromDateChange = (event) => {
     setFromDate(event.target.value);
+    setThreads([...threads]);
   };
 
   const handleToDateChange = (event) => {
     setToDate(event.target.value);
+    setThreads([...threads]);
   };
 
   const handleCategoryChange = (event) => {
@@ -86,21 +93,46 @@ const Report = () => {
   };
 
   const filteredThreads = threads.filter((thread) => {
-    // Check for matching participant names
     const hasMatchingParticipant = thread.participants.some((participant) =>
       participant.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Check if the thread's open date is within the specified date range
-    const openDate = new Date(thread.openDate);
+    const hasMatchingTitle = thread.title
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
     const fromDateObj = fromDate ? new Date(fromDate) : null;
     const toDateObj = toDate ? new Date(toDate) : null;
 
-    const openDateInRange =
-      (!fromDateObj || openDate >= fromDateObj) &&
-      (!toDateObj || openDate <= toDateObj);
+    const threadOpenDate = thread.createdAt ? new Date(thread.createdAt) : null;
 
-    return hasMatchingParticipant && openDateInRange;
+    let dateMatches = true;
+
+    if (fromDateObj && toDateObj) {
+      dateMatches =
+        threadOpenDate &&
+        threadOpenDate >= fromDateObj &&
+        threadOpenDate <= toDateObj;
+    } else if (fromDateObj) {
+      dateMatches =
+        threadOpenDate &&
+        threadOpenDate.toDateString() === fromDateObj.toDateString();
+    } else if (toDateObj) {
+      dateMatches = threadOpenDate && threadOpenDate <= toDateObj;
+    }
+
+    const categoryMatches =
+      !selectedCategory || thread.topic === selectedCategory;
+    const statusMatches =
+      !selectedStatus ||
+      thread.status.toLowerCase() === selectedStatus.toLowerCase();
+
+    return (
+      (hasMatchingParticipant || hasMatchingTitle) &&
+      dateMatches &&
+      categoryMatches &&
+      statusMatches
+    );
   });
 
   const handleSearchChange = (event) => {
@@ -108,12 +140,11 @@ const Report = () => {
   };
 
   const handleOpenDialog = (threadId) => {
-    // add parameter
-    setOpenDialogThreadId(threadId); // set the current thread ID
+    setOpenDialogThreadId(threadId);
   };
 
   const handleCloseDialog = () => {
-    setOpenDialogThreadId(null); // reset the current thread ID
+    setOpenDialogThreadId(null);
   };
 
   useEffect(() => {
@@ -148,18 +179,15 @@ const Report = () => {
       const link = document.createElement("a");
       link.href = URL.createObjectURL(response.data);
       link.download = "report.xlsx";
-      document.body.appendChild(link); // Append the link to the document
+      document.body.appendChild(link);
       link.click();
 
-      // Cleanup
       URL.revokeObjectURL(link.href);
       document.body.removeChild(link);
       console.log(response);
     } catch (error) {
       console.error(error);
     }
-    // const timestamp = new Date().toISOString();
-    // exportToExcel(threads);
   };
 
   return (
@@ -186,31 +214,40 @@ const Report = () => {
         <Grid container spacing={2} sx={{ mt: 2, mb: 3 }}>
           <Grid item xs={6} md={2}>
             <TextField
-              label="Sort by"
+              label="Status"
               variant="outlined"
               select
               fullWidth
-              defaultValue=""
+              value={selectedStatus}
+              onChange={(event) => setSelectedStatus(event.target.value)}
             >
-              <MenuItem value="">None</MenuItem>
-              <MenuItem value="openDate">Open date</MenuItem>
-              <MenuItem value="closeDate">Close date</MenuItem>
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="open">Open</MenuItem>
+              <MenuItem value="closed">Closed</MenuItem>
             </TextField>
           </Grid>
+
           <Grid item xs={6} md={2}>
             <TextField
               label="Category"
               variant="outlined"
               select
               fullWidth
-              defaultValue=""
+              value={selectedCategory}
+              onChange={handleCategoryChange}
             >
               <MenuItem value="">All</MenuItem>
-              {/* Add your categories here */}
-              <MenuItem value="category1">Category 1</MenuItem>
-              <MenuItem value="category2">Category 2</MenuItem>
+
+              {[...new Set(threads.map((thread) => thread.topic))].map(
+                (topic, index) => (
+                  <MenuItem key={index} value={topic}>
+                    {topic}
+                  </MenuItem>
+                )
+              )}
             </TextField>
           </Grid>
+
           <Grid item xs={6} md={2}>
             <TextField
               label="From date"
@@ -219,9 +256,7 @@ const Report = () => {
               fullWidth
               value={fromDate}
               onChange={handleFromDateChange}
-              InputLabelProps={{
-                shrink: true,
-              }}
+              InputLabelProps={{ shrink: true }}
             />
           </Grid>
           <Grid item xs={6} md={2}>
@@ -232,11 +267,10 @@ const Report = () => {
               fullWidth
               value={toDate}
               onChange={handleToDateChange}
-              InputLabelProps={{
-                shrink: true,
-              }}
+              InputLabelProps={{ shrink: true }}
             />
           </Grid>
+
           <Grid item xs={6} md={4}>
             <TextField
               label="Search"
@@ -272,10 +306,9 @@ const Report = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {threads.map((thread) => (
+                {filteredThreads.map((thread) => (
                   <TableRow key={thread._id}>
                     <TableCell>{thread.title}</TableCell>
-
                     <TableCell>
                       <Box
                         sx={{
@@ -291,10 +324,9 @@ const Report = () => {
                       </Box>
                       <Button onClick={() => handleOpenDialog(thread._id)}>
                         Read more
-                      </Button>{" "}
-                      {/* pass the thread ID */}
+                      </Button>
                       <Dialog
-                        open={openDialogThreadId === thread._id} // check if this thread's dialog should be open
+                        open={openDialogThreadId === thread._id}
                         onClose={handleCloseDialog}
                       >
                         <DialogContent>
@@ -320,7 +352,9 @@ const Report = () => {
                         {thread.status}
                       </Typography>
                     </TableCell>
-                    <TableCell>{thread.topic}</TableCell>
+                    <TableCell>
+                      {thread.topic.toLowerCase() || "No Category"}
+                    </TableCell>{" "}
                     <TableCell>
                       {new Date(thread.createdAt).toLocaleDateString()}
                     </TableCell>
@@ -329,7 +363,6 @@ const Report = () => {
                         ? new Date(thread.closedAt).toLocaleDateString()
                         : "N/A"}
                     </TableCell>
-                    {/* <TableCell>{thread.author.name || " "}</TableCell> */}
                     <TableCell>{thread?.author?.name || " "}</TableCell>
                     <TableCell style={{ display: "flex", cursor: "pointer" }}>
                       {thread.participants
@@ -341,9 +374,7 @@ const Report = () => {
                             placement="top"
                           >
                             <Avatar
-                              sx={{
-                                ml: idx === 0 ? 0 : -1,
-                              }}
+                              sx={{ ml: idx === 0 ? 0 : -1 }}
                               alt={participant.name}
                             >
                               {participant.name[0]}
