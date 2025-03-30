@@ -7,6 +7,7 @@ import QuestionAnswerOutlinedIcon from "@mui/icons-material/QuestionAnswerOutlin
 import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
 import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
 import SummarizeOutlinedIcon from '@mui/icons-material/SummarizeOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 
 const adminNavConfig = [
   {
@@ -28,6 +29,7 @@ const adminNavConfig = [
     link: "/admin/mentor-assignment",
   },
   { text: "Reports", icon: <SummarizeOutlinedIcon />, link: "/report" },
+  { text: "Settings", icon: <SettingsOutlinedIcon />, link: "/settings" },
 ];
 
 const facultyNavConfig = [
@@ -36,6 +38,7 @@ const facultyNavConfig = [
   { text: "Threads", icon: <QuestionAnswerOutlinedIcon />, link: "/threads" },
   { text: "Meetings", icon: <EventOutlinedIcon />, link: "/meetings" },
   { text: "Campus Buddy", icon: <InfoOutlinedIcon />, link: "/campus-buddy" },
+  { text: "Settings", icon: <SettingsOutlinedIcon />, link: "/settings" },
 ];
 
 const studentNavConfig = [
@@ -45,6 +48,7 @@ const studentNavConfig = [
   { text: "Mentor Details", icon: <PersonOutlinedIcon />, link: "/mentor-details" },
   // { text: "Chat", icon: <ChatOutlinedIcon />, link: "/chat" },
   { text: "Campus Buddy", icon: <InfoOutlinedIcon />, link: "/campus-buddy" },
+  { text: "Settings", icon: <SettingsOutlinedIcon />, link: "/settings" },
 ];
 
 const getNavConfig = (role) => {

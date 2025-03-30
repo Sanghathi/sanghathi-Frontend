@@ -24,6 +24,24 @@ const yesNoOptions = [
   { value: "no", label: "No" },
 ];
 
+const departmentOptions = [
+  "CSE",
+  "ISE",
+  "AIML",
+  "CSE(AIML)",
+  "AIDS",
+  "CS(DS)",
+  "ECE",
+  "MBA",
+  "MCA"
+];
+
+const semesterOptions = Array.from({ length: 8 }, (_, i) => i + 1);
+
+const nationalityOptions = [
+  "Indian",
+  "Foreigner"
+];
 
 export default function StudentDetailsForm() {
   const [searchParams] = useSearchParams();
@@ -309,7 +327,7 @@ return (
                   shrink: shouldShrink("studentProfile.fullName.lastName"),
                 }}
               />
-              <RHFTextField
+              <RHFSelect
                 name="studentProfile.department"
                 label="Department"
                 fullWidth
@@ -318,15 +336,27 @@ return (
                 InputLabelProps={{
                   shrink: shouldShrink("studentProfile.department"),
                 }}
-              />
-              <RHFTextField
+              >
+                {departmentOptions.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
+              </RHFSelect>
+              <RHFSelect
                 name="studentProfile.sem"
                 label="Semester"
                 fullWidth
                 required={!isDataFetched}
                 autoComplete="off"
                 InputLabelProps={{ shrink: shouldShrink("studentProfile.sem") }}
-              />
+              >
+                {semesterOptions.map((sem) => (
+                  <option key={sem} value={sem}>
+                    {sem}
+                  </option>
+                ))}
+              </RHFSelect>
               <RHFTextField
                 name="studentProfile.personalEmail"
                 label="Personal Email"
@@ -428,7 +458,7 @@ return (
                 />
               </Grid>
               <Grid item xs={12} md={6}>
-                <RHFTextField
+                <RHFSelect
                   name="studentProfile.nationality"
                   label="Nationality"
                   fullWidth
@@ -437,7 +467,13 @@ return (
                   InputLabelProps={{
                     shrink: shouldShrink("studentProfile.nationality"),
                   }}
-                />
+                >
+                  {nationalityOptions.map((nationality) => (
+                    <option key={nationality} value={nationality}>
+                      {nationality}
+                    </option>
+                  ))}
+                </RHFSelect>
               </Grid>
               <Grid item xs={12} md={6}>
                 <RHFTextField

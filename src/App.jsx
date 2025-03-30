@@ -38,6 +38,7 @@ import FacultyProfile from "./pages/Faculty/FacultyProfile";
 import FacultyProfileInfo from "./pages/Faculty/FacultyProfileInfo";
 import FetchStudentProfile from "./pages/Faculty/FetchStudentProfile";
 import StudentDashboard from "./pages/Faculty/StudentDashboard";
+import Settings from "./pages/Settings/Settings";
 // TODO : Need to remove routing logic from app component
 function App() {
   const { user } = useContext(AuthContext);
@@ -274,6 +275,14 @@ function App() {
                     element={
                       <ProtectedRouteWrapper>
                         <LazyLoadWrapper component={FacultyProfile} />
+                      </ProtectedRouteWrapper>
+                    }
+                  />
+                  <Route
+                    path="/settings"
+                    element={
+                      <ProtectedRouteWrapper>
+                        <LazyLoadWrapper component={Settings} />
                       </ProtectedRouteWrapper>
                     }
                   />

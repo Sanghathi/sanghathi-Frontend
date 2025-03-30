@@ -18,11 +18,16 @@ import {
   Typography,
   TablePagination,
   Divider,
+  Select,
+  TextField,
+  Button,
+  Checkbox,
 } from "@mui/material";
 import { useSnackbar } from "notistack";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import SearchIcon from "@mui/icons-material/Search";
 
 import ConfirmationDialog from "./ConfirmationDialog";
 import { useEffect } from "react";
@@ -32,6 +37,7 @@ import api from "../../utils/axios";
 function UserList({ onEdit }) {
   const theme = useTheme();
   const [users, setUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -39,6 +45,10 @@ function UserList({ onEdit }) {
   const rowsPerPageOptions = [20, 10, 25];
   const [rowsPerPage, setRowsPerPage] = useState(rowsPerPageOptions[0]);
   const { enqueueSnackbar } = useSnackbar();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterRole, setFilterRole] = useState("all");
+  const [filterDepartment, setFilterDepartment] = useState("all");
+  const [filterSemester, setFilterSemester] = useState("all");
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -58,7 +68,7 @@ function UserList({ onEdit }) {
       const { status, data } = await response.data;
       if (status === "success") {
         const users = data.users;
-        console.log("Users data:",users);
+        console.log("Users data:", users);
         setUsers(users);
       } else {
         throw new Error("Error fetching users");
@@ -89,21 +99,62 @@ function UserList({ onEdit }) {
 
   const handleConfirmDelete = async () => {
     try {
-      // Perform delete operation (e.g., call API to delete user)
-      const response = await api.delete(`users/${selectedUser._id}`, {
-        // add any required headers or request data
-      });
-
-      setUsers((prevUsers) =>
-        prevUsers.filter((user) => user._id !== selectedUser._id)
-      );
-
-      enqueueSnackbar("User deleted successfully", { variant: "success" });
+      if (selectedUsers.length > 0) {
+        // Bulk delete
+        await Promise.all(selectedUsers.map(async (userId) => {
+          // Delete user data from all related models
+          const deletePromises = [
+            api.delete(`users/${userId}`).catch(() => {}), // Always try to delete user
+            api.delete(`students/profile/${userId}`).catch(() => {}),
+            api.delete(`faculty/profile/${userId}`).catch(() => {}),
+            api.delete(`local-guardian/${userId}`).catch(() => {}),
+            api.delete(`mentorship/mentee/${userId}`).catch(() => {}),
+            api.delete(`mentorship/mentor/${userId}`).catch(() => {}),
+            api.delete(`career-counselling/clubs/${userId}`).catch(() => {}),
+            api.delete(`career-counselling/club-events/${userId}`).catch(() => {}),
+            api.delete(`career-counselling/professional-body/${userId}`).catch(() => {}),
+            api.delete(`career-counselling/professional-body-events/${userId}`).catch(() => {}),
+            api.delete(`career-counselling/mooc/${userId}`).catch(() => {}),
+            api.delete(`career-counselling/activity/${userId}`).catch(() => {}),
+            api.delete(`career-counselling/career-counselling/${userId}`).catch(() => {}),
+            api.delete(`conversations/private/${userId}`).catch(() => {})
+          ];
+          await Promise.all(deletePromises);
+        }));
+        setUsers((prevUsers) =>
+          prevUsers.filter((user) => !selectedUsers.includes(user._id))
+        );
+        enqueueSnackbar("Selected users and their data deleted successfully", { variant: "success" });
+        setSelectedUsers([]);
+      } else if (selectedUser) {
+        // Single user delete
+        const deletePromises = [
+          api.delete(`users/${selectedUser._id}`).catch(() => {}), // Always try to delete user
+          api.delete(`students/profile/${selectedUser._id}`).catch(() => {}),
+          api.delete(`faculty/profile/${selectedUser._id}`).catch(() => {}),
+          api.delete(`local-guardian/${selectedUser._id}`).catch(() => {}),
+          api.delete(`mentorship/mentee/${selectedUser._id}`).catch(() => {}),
+          api.delete(`mentorship/mentor/${selectedUser._id}`).catch(() => {}),
+          api.delete(`career-counselling/clubs/${selectedUser._id}`).catch(() => {}),
+          api.delete(`career-counselling/club-events/${selectedUser._id}`).catch(() => {}),
+          api.delete(`career-counselling/professional-body/${selectedUser._id}`).catch(() => {}),
+          api.delete(`career-counselling/professional-body-events/${selectedUser._id}`).catch(() => {}),
+          api.delete(`career-counselling/mooc/${selectedUser._id}`).catch(() => {}),
+          api.delete(`career-counselling/activity/${selectedUser._id}`).catch(() => {}),
+          api.delete(`career-counselling/career-counselling/${selectedUser._id}`).catch(() => {}),
+          api.delete(`conversations/private/${selectedUser._id}`).catch(() => {})
+        ];
+        await Promise.all(deletePromises);
+        setUsers((prevUsers) =>
+          prevUsers.filter((user) => user._id !== selectedUser._id)
+        );
+        enqueueSnackbar("User and their data deleted successfully", { variant: "success" });
+      }
       setOpenDialog(false);
       handleClose();
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error.message || "Failed to delete user", {
+      enqueueSnackbar(error.message || "Failed to delete user(s) and their data", {
         variant: "error",
       });
     }
@@ -118,25 +169,127 @@ function UserList({ onEdit }) {
     setAnchorEl(null);
   };
 
+  const handleSelectAll = (event) => {
+    if (event.target.checked) {
+      setSelectedUsers(users.map(user => user._id));
+    } else {
+      setSelectedUsers([]);
+    }
+  };
+
+  const handleSelectUser = (userId) => {
+    setSelectedUsers(prev => {
+      if (prev.includes(userId)) {
+        return prev.filter(id => id !== userId);
+      } else {
+        return [...prev, userId];
+      }
+    });
+  };
+
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         user.email.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesRole = filterRole === "all" || user.roleName === filterRole;
+    const matchesDepartment = filterDepartment === "all" || user.department === filterDepartment;
+    const matchesSemester = filterSemester === "all" || user.sem === filterSemester;
+
+    return matchesSearch && matchesRole && matchesDepartment && matchesSemester;
+  });
+
+  const uniqueDepartments = ["all", ...new Set(users.map(user => user.department).filter(Boolean))];
+  const uniqueSemesters = ["all", ...new Set(users.map(user => user.sem).filter(Boolean))];
+  const uniqueRoles = ["all", ...new Set(users.map(user => user.roleName).filter(Boolean))];
+
   return (
     <>
       <TableContainer component={Paper}>
         <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+          <Box sx={{ p: 2, display: "flex", gap: 2, alignItems: "center" }}>
+            <TextField
+              placeholder="Search users..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />,
+              }}
+            />
+            <Select
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              sx={{ minWidth: 150 }}
+            >
+              {uniqueRoles.map((role) => (
+                <MenuItem key={role} value={role}>
+                  {role === "all" ? "All Roles" : role.charAt(0).toUpperCase() + role.slice(1)}
+                </MenuItem>
+              ))}
+            </Select>
+            <Select
+              value={filterDepartment}
+              onChange={(e) => setFilterDepartment(e.target.value)}
+              sx={{ minWidth: 150 }}
+            >
+              {uniqueDepartments.map((dept) => (
+                <MenuItem key={dept} value={dept}>
+                  {dept === "all" ? "All Departments" : dept}
+                </MenuItem>
+              ))}
+            </Select>
+            <Select
+              value={filterSemester}
+              onChange={(e) => setFilterSemester(e.target.value)}
+              sx={{ minWidth: 150 }}
+            >
+              {uniqueSemesters.map((sem) => (
+                <MenuItem key={sem} value={sem}>
+                  {sem === "all" ? "All Semesters" : `Sem ${sem}`}
+                </MenuItem>
+              ))}
+            </Select>
+            <Button
+              variant="contained"
+              color="error"
+              disabled={selectedUsers.length === 0}
+              onClick={() => {
+                setOpenDialog(true);
+              }}
+            >
+              Delete Selected ({selectedUsers.length})
+            </Button>
+          </Box>
+
           <Table>
             <TableHead sx={{ backgroundColor: tableHeaderColor }}>
               <TableRow>
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={selectedUsers.length === filteredUsers.length}
+                    indeterminate={selectedUsers.length > 0 && selectedUsers.length < filteredUsers.length}
+                    onChange={handleSelectAll}
+                  />
+                </TableCell>
                 <TableCell>Name</TableCell>
                 <TableCell>Email</TableCell>
                 <TableCell>Phone</TableCell>
                 <TableCell>Role</TableCell>
+                <TableCell>Department</TableCell>
+                <TableCell>Semester</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {users
+              {filteredUsers
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((user) => (
                   <TableRow key={user._id}>
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        checked={selectedUsers.includes(user._id)}
+                        onChange={() => handleSelectUser(user._id)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <Box
                         sx={{
@@ -159,6 +312,8 @@ function UserList({ onEdit }) {
                     <TableCell>{user.email || "N/A"}</TableCell>
                     <TableCell>{user.phone || "N/A"}</TableCell>
                     <TableCell>{typeof user.roleName === 'string' ? user.roleName : 'N/A'}</TableCell>
+                    <TableCell>{user.department || "N/A"}</TableCell>
+                    <TableCell>{user.sem || "N/A"}</TableCell>
                     <TableCell>
                       <IconButton onClick={(event) => handleClick(event, user)}>
                         <MoreVertIcon />
@@ -204,7 +359,7 @@ function UserList({ onEdit }) {
             <TablePagination
               rowsPerPageOptions={rowsPerPageOptions}
               component="div"
-              count={users?.length || 0}
+              count={filteredUsers.length}
               rowsPerPage={rowsPerPage}
               page={page}
               onPageChange={handleChangePage}
@@ -216,8 +371,12 @@ function UserList({ onEdit }) {
 
       <ConfirmationDialog
         open={openDialog}
-        title="Delete User"
-        message={`Are you sure you want to delete ${selectedUser?.name}?`}
+        title="Delete User(s)"
+        message={
+          selectedUsers.length > 0
+            ? `Are you sure you want to delete ${selectedUsers.length} selected user(s)?`
+            : `Are you sure you want to delete ${selectedUser?.name}?`
+        }
         onConfirm={handleConfirmDelete}
         onClose={handleCloseDialog}
       />

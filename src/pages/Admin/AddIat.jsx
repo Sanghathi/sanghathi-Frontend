@@ -117,7 +117,7 @@ const AddIat = () => {
 
         // Submit IAT data
         await axios.post(
-          `${BASE_URL}/api/students/iat/${userId}`,
+          `${BASE_URL}/students/iat/${userId}`,
           iatData
         );
         success++;

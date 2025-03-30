@@ -11,6 +11,13 @@ export const loginCall = async (userCredential, dispatch) => {
       localStorage.setItem("selectedCollege", userCredential.college);
     }
     
+    // Store the token in localStorage
+    if (res.data.token) {
+      localStorage.setItem("token", res.data.token);
+      // Set the Authorization header for future requests
+      axios.defaults.headers.common["Authorization"] = `Bearer ${res.data.token}`;
+    }
+    
     dispatch({ type: "LOGIN_SUCCESS", payload: res.data.data.user });
     return res.data; 
   } catch (err) {

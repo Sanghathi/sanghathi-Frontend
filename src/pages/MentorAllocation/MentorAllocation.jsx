@@ -7,7 +7,11 @@ import {
   MenuItem,
   Select,
   Button,
+  TextField,
+  TablePagination,
+  Divider,
 } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
 import ConfirmationDialogMentor from '../Users/ConfirmationDialogMentorAllocation';
 import Page from "../../components/Page";
 import api from "../../utils/axios";
@@ -23,6 +27,10 @@ const MentorAllocation = () => {
   const [studentsWithMentors, setStudentsWithMentors] = useState([]);
   const [filterSem, setFilterSem] = useState("all");
   const [filterBranch, setFilterBranch] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const rowsPerPageOptions = [5, 10, 25, 50];
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -67,9 +75,21 @@ const MentorAllocation = () => {
     const matchesBranchFilter =
       filterBranch === "all" || student.profile?.department === filterBranch;
 
-    return matchesMentorFilter && matchesSemFilter && matchesBranchFilter;
+    const matchesSearch = searchQuery === "" || 
+      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      student.profile?.usn?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesMentorFilter && matchesSemFilter && matchesBranchFilter && matchesSearch;
   });
 
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   const handleAssignMentor = () => {
     setDialogOpen(true);
@@ -96,6 +116,7 @@ const MentorAllocation = () => {
     setConfirmationOpen(false);
     setDialogOpen(true);
   };
+
   const uniqueSems = [
     "all",
     ...new Set(students.map((student) => student.profile?.sem).filter(Boolean)),
@@ -107,25 +128,33 @@ const MentorAllocation = () => {
     ),
   ];
 
-
   return (
     <Page title="User: Account Settings">
       <Container maxWidth="lg">
         <TableContainer component={Paper}>
           <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", p: 2 }}>
+            <Box sx={{ p: 2, display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
+              <TextField
+                placeholder="Search by name or USN..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />,
+                }}
+              />
               <Select
                 value={filterOption}
                 onChange={(e) => setFilterOption(e.target.value)}
+                sx={{ minWidth: 150 }}
               >
                 <MenuItem value="all">All Students</MenuItem>
                 <MenuItem value="assigned">Assigned Mentors</MenuItem>
                 <MenuItem value="unassigned">Unassigned Mentors</MenuItem>
               </Select>
-              {/* Semester Filter */}
               <Select
                 value={filterSem}
                 onChange={(e) => setFilterSem(e.target.value)}
+                sx={{ minWidth: 150 }}
               >
                 {uniqueSems.map((sem) => (
                   <MenuItem key={sem} value={sem}>
@@ -133,11 +162,10 @@ const MentorAllocation = () => {
                   </MenuItem>
                 ))}
               </Select>
-
-              {/* Branch Filter */}
               <Select
                 value={filterBranch}
                 onChange={(e) => setFilterBranch(e.target.value)}
+                sx={{ minWidth: 150 }}
               >
                 {uniqueBranches.map((branch) => (
                   <MenuItem key={branch} value={branch}>
@@ -145,7 +173,6 @@ const MentorAllocation = () => {
                   </MenuItem>
                 ))}
               </Select>
-              
               <Button
                 variant="contained"
                 color="primary"
@@ -157,10 +184,31 @@ const MentorAllocation = () => {
             </Box>
 
             <StudentTable
-              students={filteredStudents}
+              students={filteredStudents.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)}
               selectedStudents={selectedStudents}
               onSelectStudent={setSelectedStudents}
             />
+
+            <Box sx={{ flexGrow: 1 }} />
+            <Divider />
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "flex-end",
+                alignItems: "center",
+                padding: "8px",
+              }}
+            >
+              <TablePagination
+                rowsPerPageOptions={rowsPerPageOptions}
+                component="div"
+                count={filteredStudents.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+              />
+            </Box>
           </Box>
         </TableContainer>
       </Container>

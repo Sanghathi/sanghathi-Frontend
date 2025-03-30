@@ -24,7 +24,11 @@ const MENU_OPTIONS = [
   },
   {
     label: "Profile",
-    linkTo: "/Profile",
+    linkTo: "/student/profile",
+  },
+  {
+    label: "Settings",
+    linkTo: "/settings",
   },
 ];
 
