@@ -1,214 +1,154 @@
-import React, { useState } from "react";
+import { useState, useEffect, useContext } from "react";
 import {
   Box,
-  Button,
-  Typography,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  MenuItem,
   Select,
-  FormControl,
-  InputLabel,
+  MenuItem,
   TextField,
+  Typography, // For headings
 } from "@mui/material";
+import axios from "axios";
+import { AuthContext } from "../../context/AuthContext";
 
-export default function External() {
-  const [currentSemester, setCurrentSemester] = useState(1);
-  const [semesterData, setSemesterData] = useState(
-    Array.from({ length: 8 }, () =>
-      Array(8).fill({
-        subjectCode: "",
-        subject: "",
-        finalIAT: "",
-        maxMarks: "",
-        attempt1: "",
-        attempt2: "",
-        attempt3: "",
-        attempt4: "",
-        passingDate: "",
-      })
-    )
-  );
-  const [editMode, setEditMode] = useState(false);
-  const [finalCGPA, setFinalCGPA] = useState("");
-  const [finalResultDate, setFinalResultDate] = useState("");
+const Iat = () => {
+  const { user } = useContext(AuthContext);
+  const [iatData, setIatData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selectedSemester, setSelectedSemester] = useState(null);
 
-  const handleFieldChange = (rowIndex, field, value) => {
-    const updatedSemesterData = [...semesterData];
-    updatedSemesterData[currentSemester - 1][rowIndex][field] = value;
-    setSemesterData(updatedSemesterData);
+  useEffect(() => {
+    const fetchIatData = async () => {
+      try {
+        //  Adapt the endpoint to your IAT data endpoint
+        const response = await axios.get(
+          `${BASE_URL}/students/iat/${user._id}` //  Replace with your actual endpoint
+        );
+        const data = response.data.data.iat; // Adjust based on your API response structure
+
+        if (data && data.semesters) {
+          setIatData(data.semesters);
+          if (data.semesters.length > 0) {
+            setSelectedSemester(data.semesters[0].semester);
+          }
+        } else {
+            setIatData([]);
+        }
+
+        setLoading(false);
+      } catch (err) {
+        setError("Failed to fetch IAT data");
+        setLoading(false);
+        console.error(err); // Log the error for debugging
+      }
+    };
+
+    fetchIatData();
+  }, [user._id]);
+
+  const handleSemesterChange = (event) => {
+    setSelectedSemester(parseInt(event.target.value, 10));
   };
 
-  const handleReset = () => {
-    const updatedSemesterData = [...semesterData];
-    updatedSemesterData[currentSemester - 1] = Array(8).fill({
-      subjectCode: "",
-      subject: "",
-      finalIAT: "",
-      maxMarks: "",
-      attempt1: "",
-      attempt2: "",
-      attempt3: "",
-      attempt4: "",
-      passingDate: "",
+  const getSubjectsForSemester = () => {
+    if (!selectedSemester) return [];
+    const semesterData = iatData.find((s) => s.semester === selectedSemester);
+    if (!semesterData) return [];
+
+    const subjectsMap = new Map();
+    semesterData.subjects.forEach((subject) => {
+      subjectsMap.set(subject.subjectCode, subject);
     });
-    setSemesterData(updatedSemesterData);
-    setFinalCGPA("");
-    setFinalResultDate("");
+    return Array.from(subjectsMap.values());
   };
 
-  const handleMockData = () => {
-    const mockRows = [
-      {
-        subjectCode: "MTH101",
-        subject: "Mathematics",
-        finalIAT: 85,
-        maxMarks: 100,
-        attempt1: 78,
-        attempt2: "",
-        attempt3: "",
-        attempt4: "",
-        passingDate: "2024-05-01",
-      },
-      {
-        subjectCode: "PHY102",
-        subject: "Physics",
-        finalIAT: 86,
-        maxMarks: 100,
-        attempt1: 80,
-        attempt2: "",
-        attempt3: "",
-        attempt4: "",
-        passingDate: "2024-05-02",
-      },
-      // Add more mock rows as needed
-    ];
-    const updatedSemesterData = [...semesterData];
-    updatedSemesterData[currentSemester - 1] = mockRows.concat(
-      Array(8 - mockRows.length).fill({
-        subjectCode: "",
-        subject: "",
-        finalIAT: "",
-        maxMarks: "",
-        attempt1: "",
-        attempt2: "",
-        attempt3: "",
-        attempt4: "",
-        passingDate: "",
-      })
-    );
-    setSemesterData(updatedSemesterData);
-    setFinalCGPA("9.2");
-    setFinalResultDate("2024-06-30");
-  };
+  //  Get IAT marks for a specific subject and IAT number
+    const getIatMarks = (subjectCode, iatNumber) => {
+        if (!selectedSemester) return "";
+        const semesterData = iatData.find(s => s.semester === selectedSemester);
+        if (!semesterData) return "";
+
+        const subject = semesterData.subjects.find(s => s.subjectCode === subjectCode);
+        if (!subject) return "";
+
+        switch (iatNumber) {
+            case 1: return subject.iat1 || ""; // Handle potential undefined/null
+            case 2: return subject.iat2 || "";
+            case 3: return subject.iat3 || "";
+            default: return "";
+        }
+    };
+
+
 
   return (
-    <Box>
-      {/* Semester Selector */}
-      <FormControl fullWidth sx={{ mb: 3, maxWidth: 200 }}>
-        <InputLabel>Semester</InputLabel>
-        <Select
-          value={currentSemester}
-          onChange={(e) => setCurrentSemester(e.target.value)}
-        >
-          {Array.from({ length: 8 }, (_, i) => (
-            <MenuItem key={i} value={i + 1}>
-              Semester {i + 1}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        Semester {currentSemester}
+    <Box sx={{ p: 2 }}>
+      <Typography variant="h4" component="h1" gutterBottom align="center">
+        VTU Marks Report
       </Typography>
 
-      {/* External Table */}
-      <TableContainer component={Paper}>
+      <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+        <label>
+          Select Semester:
+          <Select
+            value={selectedSemester}
+            onChange={handleSemesterChange}
+            sx={{ ml: 1 }}
+          >
+            {iatData.map((sem) => (
+              <MenuItem key={sem.semester} value={sem.semester}>
+                Semester {sem.semester}
+              </MenuItem>
+            ))}
+          </Select>
+        </label>
+      </Box>
+
+      <TableContainer sx={{ border: "1px solid gray" }}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: "bold" }}>Sl No</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Subject Code</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Subject</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Final IAT</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Max Marks(External)</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>1st Attempt</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>2nd Attempt</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>3rd Attempt</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>4th Attempt</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Passing Date</TableCell>
+              <TableCell sx={{ border: "1px solid gray" }}>
+                Subject Code
+              </TableCell>
+              <TableCell sx={{ border: "1px solid gray" }}>
+                Subject Name
+              </TableCell>
+              <TableCell sx={{ border: "1px solid gray" }}>IAT 1</TableCell>
+              <TableCell sx={{ border: "1px solid gray" }}>IAT 2</TableCell>
+              <TableCell sx={{ border: "1px solid gray" }}>IAT 3</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {semesterData[currentSemester - 1].map((row, index) => (
-              <TableRow key={index}>
-                <TableCell>{index + 1}</TableCell>
-                {Object.keys(row).map((field, i) => (
-                  <TableCell key={i} sx={{ fontWeight: "normal" }}>
-                    {editMode ? (
-                      <TextField
-                        variant="outlined"
-                        size="small"
-                        value={row[field]}
-                        onChange={(e) => handleFieldChange(index, field, e.target.value)}
-                      />
-                    ) : (
-                      row[field] || ""
-                    )}
-                  </TableCell>
-                ))}
+            {getSubjectsForSemester().map((subject) => (
+              <TableRow key={subject.subjectCode}>
+                <TableCell sx={{ border: "1px solid gray" }}>
+                  {subject.subjectCode}
+                </TableCell>
+                <TableCell sx={{ border: "1px solid gray" }}>
+                  {subject.subjectName}
+                </TableCell>
+                <TableCell sx={{ border: "1px solid gray" }}>
+                    {getIatMarks(subject.subjectCode, 1)}
+                </TableCell>
+                <TableCell sx={{ border: "1px solid gray" }}>
+                    {getIatMarks(subject.subjectCode, 2)}
+                </TableCell>
+                <TableCell sx={{ border: "1px solid gray" }}>
+                    {getIatMarks(subject.subjectCode, 3)}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
-
-      {/* Additional Fields */}
-      <Box sx={{ mt: 3 }}>
-        <TextField
-          fullWidth
-          label="CGPA"
-          value={finalCGPA}
-          onChange={(e) => setFinalCGPA(e.target.value)}
-          variant="outlined"
-          size="small"
-          sx={{ mb: 2 }}
-          disabled={!editMode}
-        />
-        <TextField
-          fullWidth
-          label="Date of Final Result"
-          value={finalResultDate}
-          onChange={(e) => setFinalResultDate(e.target.value)}
-          variant="outlined"
-          size="small"
-          disabled={!editMode}
-        />
-      </Box>
-
-      {/* Buttons */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => setEditMode(!editMode)}
-          sx={{ ml: 2 }}
-        >
-          {editMode ? "Save" : "Edit"}
-        </Button>
-        <Button variant="outlined" onClick={handleMockData} sx={{ ml: 2 }}>
-          Fill Mock Data
-        </Button>
-        <Button variant="outlined" color="secondary" onClick={handleReset} sx={{ ml: 2 }}>
-          Reset
-        </Button>
-      </Box>
     </Box>
   );
-}
+};
+
+export default Iat;

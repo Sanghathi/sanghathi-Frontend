@@ -27,8 +27,6 @@ export default function Hobbies() {
   const { user } = useContext(AuthContext);
   const [searchParams] = useSearchParams();
   const menteeId = searchParams.get('menteeId');
-  console.log("User : ",user);
-  console.log("id: ",menteeId);
 
   const [isDataFetched, setIsDataFetched] = useState(false);
   const methods = useForm({

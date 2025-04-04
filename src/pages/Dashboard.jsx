@@ -129,6 +129,13 @@ const Dashboard = () => {
               link="/student/ptm"
             />
           </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <StudentTile
+              title="PO Attainment and Bloom's Level"
+              icon={<GroupIcon fontSize="large" />}
+              link="/po-attainment-grading"
+            />
+          </Grid>
         </Grid>
       </Container>
     </Page>

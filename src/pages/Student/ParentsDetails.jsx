@@ -1,9 +1,10 @@
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect, useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
 import { useSnackbar } from "notistack";
 import { useCallback } from "react";
 import api from "../../utils/axios";
-
+import { useSearchParams } from "react-router-dom";
 // form
 import { useForm } from "react-hook-form";
 
@@ -54,6 +55,10 @@ const DEFAULT_VALUES = {
 };
 export default function ParentsDetails() {
   const { enqueueSnackbar } = useSnackbar();
+  const { user } = useContext(AuthContext);
+  const [searchParams] = useSearchParams();
+  const menteeId = searchParams.get('menteeId');
+  const [isDataFetched, setIsDataFetched] = useState(false);
 
   const methods = useForm({
     defaultValues: DEFAULT_VALUES,
@@ -63,11 +68,40 @@ export default function ParentsDetails() {
     handleSubmit,
     reset,
     formState: { isSubmitting },
+    setValue,
   } = methods;
 
-  const handleFillMockData = () => {
-    reset(DEFAULT_VALUES);
-  };
+  const fetchParentDetails = useCallback(async () => {
+    try {
+      let response;
+      const userId = menteeId || user._id;
+      response = await api.get(`/parent-details/${userId}`);
+      console.log("Parent details response:", response.data);
+      
+      const parentDetails = response.data.data?.parentDetails;
+      
+      if (parentDetails) {
+        Object.keys(parentDetails).forEach((key) => {
+          if (key !== '_id' && key !== '__v' && key !== 'createdAt' && key !== 'updatedAt' && key !== 'userId') {
+            setValue(key, parentDetails[key]);
+          }
+        });
+      }
+      setIsDataFetched(true);
+    } catch (error) {
+      console.error("Error fetching parent details:", error);
+      if (error.response && error.response.status === 404) {
+        console.log("Parent details not found, which is expected for new users.");
+        setIsDataFetched(true);
+      } else {
+        enqueueSnackbar("Error fetching parent details", { variant: "error" });
+      }
+    }
+  }, [user._id, menteeId, setValue, enqueueSnackbar]);
+
+  useEffect(() => {
+    fetchParentDetails();
+  }, [fetchParentDetails]);
 
   const handleReset = () => {
     reset();
@@ -75,7 +109,14 @@ export default function ParentsDetails() {
 
   const onSubmit = useCallback(async (formData) => {
     try {
-      await api.post("/api/my-form-endpoint", formData);
+      console.log("Form data:", formData);
+      // Include the userId in the request
+      const requestData = {
+        ...formData,
+        userId: menteeId || user._id, //  Use menteeId if available, otherwise use user._id
+      };
+      console.log("Sending data with userId:", requestData);
+      await api.post("/parent-details", requestData);
       enqueueSnackbar("Form submitted successfully!", {
         variant: "success",
       });
@@ -86,7 +127,7 @@ export default function ParentsDetails() {
         variant: "error",
       });
     }
-  }, []);
+  }, [menteeId, user, enqueueSnackbar, reset]);
 
   return (
     <div>
@@ -120,7 +161,7 @@ export default function ParentsDetails() {
               </Grid>
               <Grid item xs={12} md={4}>
               <RHFTextField
-                  name="MotherFirstName"
+                  name="motherFirstName"
                   label="Mother's First Name"
                   fullWidth
                   required
@@ -128,14 +169,14 @@ export default function ParentsDetails() {
               </Grid>
               <Grid item xs={12} md={4}>
              <RHFTextField
-                  name="MotherMiddleName"
+                  name="motherMiddleName"
                   label="Mother's Middle Name"
                   fullWidth
                 />
               </Grid>
               <Grid item xs={12} md={4}>
               <RHFTextField
-                  name="MotherLastName"
+                  name="motherLastName"
                   label="Mother's Last Name"
                   fullWidth
                 />
@@ -167,7 +208,7 @@ export default function ParentsDetails() {
                   fullWidth
                 />
                 <RHFTextField
-                  name="fatherOfficePhoneNo"
+                  name="fatherOfficePhone"
                   label="Father's Office Phone No."
                   fullWidth
                   required
@@ -191,34 +232,34 @@ export default function ParentsDetails() {
           <Stack spacing={3} sx={{ mt: 1}}>
                 <h3>Mother's Details</h3>
                 <RHFTextField
-                  name="MotherOccupation"
+                  name="motherOccupation"
                   label="Mother's Occupation"
                   fullWidth
                   required
                 />
                  <RHFTextField
-                  name="MotherOrganization"
+                  name="motherOrganization"
                   label="Mother's Organization"
                   fullWidth
                 />
                 <RHFTextField
-                  name="MotherDesignation"
+                  name="motherDesignation"
                   label="Mother's Designation"
                   fullWidth
                 />
                 <RHFTextField
-                  name="MotherOfficePhoneNo"
+                  name="motherOfficePhone"
                   label="Mother's Phone No."
                   fullWidth
                   required
                 />
               <RHFTextField
-                  name="MotherOfficeAddress"
+                  name="motherOfficeAddress"
                   label="Mother's Office Address"
                   fullWidth
                 />
                <RHFTextField
-                  name="MotherAnnualIncome"
+                  name="motherAnnualIncome"
                   label="Mother's Annual Income"
                   fullWidth
                 />
@@ -232,17 +273,7 @@ export default function ParentsDetails() {
         <Card sx={{p:3}}>
         <Stack spacing={3} alignItems="flex-end" >
               <Box display="flex" gap={1}>
-                {import.meta.env.MODE === "development" && (
-                  <LoadingButton
-                    variant="outlined"
-                    onClick={handleFillMockData}
-                  >
-                    Fill Mock Data
-                  </LoadingButton>
-                )}
-                <LoadingButton variant="outlined" onClick={handleReset}>
-                  Reset
-                </LoadingButton>
+                
                 <LoadingButton
                   type="submit"
                   variant="contained"

@@ -33,6 +33,7 @@ import MentorAssignmentDialog from "./pages/MentorAllocation/MentorAssignmentDia
 import MentorSuggestionMenu from "./pages/MentorAllocation/MentorSuggestionMenu";
 import CareerReview from "./pages/CareerReview/CareerReview";
 import ScoreCard from "./pages/Scorecard/ScoreCard";
+import POAttainmentGrading from "./pages/MenteePOAttainment/POAttainmentGrading";
 import StudentProfileOnly from "./pages/Student/StudentProfileOnly";
 import FacultyProfile from "./pages/Faculty/FacultyProfile";
 import FacultyProfileInfo from "./pages/Faculty/FacultyProfileInfo";
@@ -235,6 +236,14 @@ function App() {
                     element={
                       <ProtectedRouteWrapper>
                         <LazyLoadWrapper component={ScoreCard} />
+                      </ProtectedRouteWrapper>
+                    }
+                  />
+                  <Route
+                    path="/po-attainment-grading"
+                    element={
+                      <ProtectedRouteWrapper>
+                        <LazyLoadWrapper component={POAttainmentGrading} />
                       </ProtectedRouteWrapper>
                     }
                   />
