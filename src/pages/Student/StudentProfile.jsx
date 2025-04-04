@@ -2,7 +2,7 @@ import { capitalCase } from "change-case";
 import { AuthContext } from "../../context/AuthContext";
 import { useState, useContext } from "react";
 // @mui
-import { Container, Tab, Box, Tabs } from "@mui/material";
+import { Container, Tab, Box, Tabs, useTheme } from "@mui/material";
 // routes
 
 // hooks
@@ -23,11 +23,13 @@ import ContactDetails from "./ContactDetails";
 import Academic from "./Academic";
 import PrevAcademic from "./PrevAcademic";
 
-
 // ----------------------------------------------------------------------
 
 export default function StudentProfile() {
   const { currentTab, onChangeTab } = useTabs("Student Details");
+  const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
+  
   const ACCOUNT_TABS = [
     {
       value: "Student Details",
@@ -41,25 +43,24 @@ export default function StudentProfile() {
     },
     {
       value: "Guardian Details",
-      icon: <Iconify icon={"ic:round-account-box"} width={20} height={20} />,
+      icon: <Iconify icon={"ic:round-receipt"} width={20} height={20} />,
       component: <LocalGuardianForm />,
     },
     {
       value: "Contact Details",
-      icon: <Iconify icon={"ic:round-account-box"} width={20} height={20} />,
+      icon: <Iconify icon={"eva:bell-fill"} width={20} height={20} />,
       component: <ContactDetails />,
     },
     {
       value: "Academic Details",
-      icon: <Iconify icon={"ic:round-account-box"} width={20} height={20} />,
-      component: <PrevAcademic/>,
+      icon: <Iconify icon={"eva:share-fill"} width={20} height={20} />,
+      component: <PrevAcademic />,
     },
     {
       value: "Admission Details",
-      icon: <Iconify icon={"ic:round-account-box"} width={20} height={20} />,
+      icon: <Iconify icon={"eva:share-fill"} width={20} height={20} />,
       component: <AdmissionDetails />,
     },
-    
   ];
 
   return (
@@ -71,6 +72,17 @@ export default function StudentProfile() {
           scrollButtons="auto"
           value={currentTab}
           onChange={onChangeTab}
+          sx={{
+            '& .MuiTab-root': {
+              color: isLight ? theme.palette.text.secondary : theme.palette.text.primary,
+              '&.Mui-selected': {
+                color: isLight ? theme.palette.primary.main : theme.palette.info.main
+              }
+            },
+            '& .MuiTabs-indicator': {
+              backgroundColor: isLight ? theme.palette.primary.main : theme.palette.info.main
+            }
+          }}
         >
           {ACCOUNT_TABS.map((tab) => (
             <Tab

@@ -51,22 +51,49 @@ const createCustomShadow = (color) => {
     z20: `0 20px 40px -4px ${transparent}`,
     z24: `0 24px 48px 0 ${transparent}`,
     //
+    // Light mode enhancements (only affecting light mode)
+    card: `0 0 2px 0 ${alpha(color, 0.2)}, 0 12px 24px -4px ${alpha(color, 0.12)}`,
+    dialog: `-40px 40px 80px -8px ${alpha(palette.light.common.black, 0.24)}`,
+    dropdown: `0 0 2px 0 ${alpha(color, 0.24)}, -20px 20px 40px -4px ${alpha(color, 0.24)}`,
+    
+    // Color-based shadows for light mode
     primary: `0 8px 16px 0 ${alpha(palette.light.primary.main, 0.24)}`,
     info: `0 8px 16px 0 ${alpha(palette.light.info.main, 0.24)}`,
     secondary: `0 8px 16px 0 ${alpha(palette.light.secondary.main, 0.24)}`,
     success: `0 8px 16px 0 ${alpha(palette.light.success.main, 0.24)}`,
     warning: `0 8px 16px 0 ${alpha(palette.light.warning.main, 0.24)}`,
     error: `0 8px 16px 0 ${alpha(palette.light.error.main, 0.24)}`,
-    //
-    card: `0 0 2px 0 ${alpha(color, 0.2)}, 0 12px 24px -4px ${alpha(color, 0.12)}`,
-    dialog: `-40px 40px 80px -8px ${alpha(palette.light.common.black, 0.24)}`,
-    dropdown: `0 0 2px 0 ${alpha(color, 0.24)}, -20px 20px 40px -4px ${alpha(color, 0.24)}`,
+  };
+};
+
+const createDarkCustomShadow = (color) => {
+  const transparent = alpha(color, 0.24);
+  return {
+    z1: `0 1px 2px 0 ${transparent}`,
+    z8: `0 8px 16px 0 ${transparent}`,
+    z12: `0 12px 24px -4px ${transparent}`,
+    z16: `0 16px 32px -4px ${transparent}`,
+    z20: `0 20px 40px -4px ${transparent}`,
+    z24: `0 24px 48px 0 ${transparent}`,
+    
+    // Dark mode specific shadows with enhanced contrast and depth
+    card: `0 0 2px 0 ${alpha(color, 0.3)}, 0 12px 24px -4px ${alpha(color, 0.5)}`,
+    dialog: `-40px 40px 80px -8px ${alpha('#000000', 0.4)}`,
+    dropdown: `0 0 2px 0 ${alpha(color, 0.3)}, -20px 20px 40px -4px ${alpha(color, 0.5)}`,
+    
+    // Color-based shadows for dark mode with more vibrant glow
+    primary: `0 8px 16px 0 ${alpha(palette.dark.primary.main, 0.3)}`,
+    info: `0 8px 16px 0 ${alpha(palette.dark.info.main, 0.3)}`,
+    secondary: `0 8px 16px 0 ${alpha(palette.dark.secondary.main, 0.3)}`,
+    success: `0 8px 16px 0 ${alpha(palette.dark.success.main, 0.3)}`,
+    warning: `0 8px 16px 0 ${alpha(palette.dark.warning.main, 0.3)}`,
+    error: `0 8px 16px 0 ${alpha(palette.dark.error.main, 0.3)}`,
   };
 };
 
 export const customShadows = {
   light: createCustomShadow(LIGHT_MODE),
-  dark: createCustomShadow(DARK_MODE),
+  dark: createDarkCustomShadow(DARK_MODE),
 };
 
 const shadows = {

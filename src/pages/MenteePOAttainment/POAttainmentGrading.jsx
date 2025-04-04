@@ -12,14 +12,17 @@ import {
   TextField,
   Typography,
   Button,
-  Tooltip
+  Tooltip,
+  Paper,
 } from "@mui/material";
 import api from "../../utils/axios";
 import { AuthContext } from "../../context/AuthContext";
 import { useSnackbar } from "notistack";
 import { useSearchParams } from "react-router-dom";
+import { useTheme } from "@mui/material/styles";
 
 const POAttainmentGrading = () => {
+  const theme = useTheme();
   const { user } = useContext(AuthContext);
   const { enqueueSnackbar } = useSnackbar();
   const [searchParams] = useSearchParams();
@@ -182,143 +185,211 @@ const POAttainmentGrading = () => {
     return [1, 2, 3, 4, 5, 6, 7, 8];
   };
 
-  return (
-    <Box sx={{ p: 2 }}>
-      <Typography variant="h4" component="h1" gutterBottom align="center">
-        Guide for Mentor to Grade Mentee's PO Attainment and Bloom Taxonomy Level
-      </Typography>
+  // Table cell styles - ensures proper colors in light mode
+  const tableCellStyle = {
+    border: `1px solid ${theme.palette.divider}`,
+    backgroundColor: theme.palette.background.paper
+  };
+  
+  const tableHeadCellStyle = {
+    ...tableCellStyle,
+    fontWeight: 'bold',
+    backgroundColor: theme.palette.mode === 'light' ? theme.palette.grey[100] : theme.palette.grey[800],
+    color: theme.palette.text.primary,
+  };
 
-      <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
-        <label>
-          Select Semester:
-          <Select
-            value={selectedSemester}
-            onChange={handleSemesterChange}
-            sx={{ ml: 1 }}
-          >
-            {getAvailableSemesters().map((sem) => (
-              <MenuItem key={sem} value={sem}>
-                Semester {sem}
-              </MenuItem>
-            ))}
-          </Select>
-        </label>
-      </Box>
+  const isLight = theme.palette.mode === 'light';
+
+  return (
+    <Box sx={{ p: 2, maxWidth: 1200, mx: 'auto' }}>
+      <Paper elevation={1} sx={{ p: 3, mb: 3, backgroundColor: theme.palette.background.paper }}>
+        <Typography 
+          variant="h4" 
+          component="h1" 
+          gutterBottom 
+          align="center" 
+          color={isLight ? "primary.main" : "info.main"}
+        >
+          Guide for Mentor to Grade Mentee's PO Attainment and Bloom Taxonomy Level
+        </Typography>
+
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            p: 1, 
+            px: 2,
+            bgcolor: theme.palette.background.neutral,
+            borderRadius: 1,
+          }}>
+            <Typography variant="body1" sx={{ mr: 2, fontWeight: 'medium' }}>
+              Select Semester:
+            </Typography>
+            <Select
+              value={selectedSemester}
+              onChange={handleSemesterChange}
+              sx={{ minWidth: 120 }}
+              size="small"
+            >
+              {getAvailableSemesters().map((sem) => (
+                <MenuItem key={sem} value={sem}>
+                  Semester {sem}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+        </Box>
+      </Paper>
 
       {/* PO Correlation Table */}
-      <Typography variant="h5" gutterBottom align="center" sx={{ mt: 3 }}>
-        Student Wise PO Correlation
-      </Typography>
-      <TableContainer sx={{ border: "1px solid gray", mb: 4 }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ border: "1px solid gray", fontWeight: 'bold' }}>PO</TableCell>
-              <TableCell sx={{ border: "1px solid gray", fontWeight: 'bold' }}>CL</TableCell>
-              <TableCell sx={{ border: "1px solid gray", fontWeight: 'bold' }}>Mentor Justification</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {programOutcomes.map((po) => (
-              <TableRow key={po.code}>
-                <TableCell sx={{ border: "1px solid gray" }}>
-                  {po.code} 
+      <Paper elevation={1} sx={{ p: 3, mb: 3, backgroundColor: theme.palette.background.paper }}>
+        <Typography variant="h5" gutterBottom align="center" sx={{ mb: 2, color: theme.palette.primary.dark }}>
+          Student Wise PO Correlation
+        </Typography>
+        <TableContainer sx={{ mb: 2, border: `1px solid ${theme.palette.divider}` }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={tableHeadCellStyle}>PO</TableCell>
+                <TableCell sx={tableHeadCellStyle}>CL</TableCell>
+                <TableCell sx={tableHeadCellStyle}>Mentor Justification</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {programOutcomes.map((po) => (
+                <TableRow key={po.code} sx={{ 
+                  '&:nth-of-type(odd)': {
+                    backgroundColor: theme.palette.mode === 'light' ? theme.palette.grey[50] : theme.palette.grey[900],
+                  },
+                }}>
+                  <TableCell sx={tableCellStyle}>
+                    <Tooltip title={po.desc} arrow placement="top-start">
+                      <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                        {po.code}
+                      </Typography>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell sx={tableCellStyle}>
+                    {isFaculty ? (
+                      <Select
+                        value={poAttainmentData[po.code]?.cl || 1}
+                        onChange={(e) => handlePOChange(po.code, 'cl', e.target.value)}
+                        fullWidth
+                        size="small"
+                      >
+                        {correlationLevels.map((level) => (
+                          <MenuItem key={level} value={level}>
+                            {level}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    ) : (
+                      <Typography variant="body2">{poAttainmentData[po.code]?.cl || 1}</Typography>
+                    )}
+                  </TableCell>
+                  <TableCell sx={tableCellStyle}>
+                    {isFaculty ? (
+                      <TextField
+                        fullWidth
+                        size="small"
+                        value={poAttainmentData[po.code]?.justification || ""}
+                        onChange={(e) => handlePOChange(po.code, 'justification', e.target.value)}
+                        placeholder={`${po.desc}`}
+                      />
+                    ) : (
+                      <Typography variant="body2">{poAttainmentData[po.code]?.justification || ""}</Typography>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+
+      {/* Bloom Level Table */}
+      <Paper elevation={1} sx={{ p: 3, mb: 3, backgroundColor: theme.palette.background.paper }}>
+        <Typography variant="h5" gutterBottom align="center" sx={{ mb: 2, color: theme.palette.primary.dark }}>
+          Bloom Level
+        </Typography>
+        <TableContainer sx={{ mb: 2, border: `1px solid ${theme.palette.divider}` }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={tableHeadCellStyle}>Bloom's Taxonomy Levels</TableCell>
+                <TableCell sx={tableHeadCellStyle}>Select Level</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              <TableRow sx={{ backgroundColor: theme.palette.background.paper }}>
+                <TableCell sx={tableCellStyle}>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {bloomTaxonomyLevels.map((level, index) => (
+                      <Box 
+                        key={index} 
+                        sx={{ 
+                          bgcolor: theme.palette.mode === 'light' ? theme.palette.grey[100] : theme.palette.grey[800],
+                          borderRadius: 1,
+                          p: 0.5,
+                          px: 1,
+                          border: '1px solid',
+                          borderColor: theme.palette.divider,
+                        }}
+                      >
+                        <Typography variant="body2">
+                          {index + 1} - {level}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
                 </TableCell>
-                <TableCell sx={{ border: "1px solid gray" }}>
+                <TableCell sx={tableCellStyle}>
                   {isFaculty ? (
                     <Select
-                      value={poAttainmentData[po.code]?.cl || 1}
-                      onChange={(e) => handlePOChange(po.code, 'cl', e.target.value)}
+                      value={bloomLevelData?.level || 1}
+                      onChange={(e) => handleBloomLevelChange(e.target.value)}
                       fullWidth
                       size="small"
                     >
-                      {correlationLevels.map((level) => (
-                        <MenuItem key={level} value={level}>
-                          {level}
+                      {bloomTaxonomyLevels.map((level, index) => (
+                        <MenuItem key={index} value={index + 1}>
+                          {index + 1} - {level}
                         </MenuItem>
                       ))}
                     </Select>
                   ) : (
-                    <div>{poAttainmentData[po.code]?.cl || 1}</div>
-                  )}
-                </TableCell>
-                <TableCell sx={{ border: "1px solid gray" }}>
-                  {isFaculty ? (
-                    <TextField
-                      fullWidth
-                      size="small"
-                      value={poAttainmentData[po.code]?.justification || ""}
-                      onChange={(e) => handlePOChange(po.code, 'justification', e.target.value)}
-                      placeholder={`${po.desc}`}
-                    />
-                  ) : (
-                    <div>{poAttainmentData[po.code]?.justification || ""}</div>
+                    <Typography variant="body2">
+                      {bloomLevelData?.level ? 
+                        `${bloomLevelData.level} - ${bloomTaxonomyLevels[bloomLevelData.level - 1]}` : 
+                        "Not set"}
+                    </Typography>
                   )}
                 </TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
 
-      {/* Bloom Level Table */}
-      <Typography variant="h5" gutterBottom align="center">
-        Bloom Level
-      </Typography>
-      <TableContainer sx={{ border: "1px solid gray", mb: 4 }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ border: "1px solid gray", fontWeight: 'bold' }}>Bloom's Taxonomy Levels</TableCell>
-              <TableCell sx={{ border: "1px solid gray", fontWeight: 'bold' }}>Select Level</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow>
-              <TableCell sx={{ border: "1px solid gray" }}>
-                {bloomTaxonomyLevels.join(", ")}
-              </TableCell>
-              <TableCell sx={{ border: "1px solid gray" }}>
-                {isFaculty ? (
-                  <Select
-                    value={bloomLevelData?.level || 1}
-                    onChange={(e) => handleBloomLevelChange(e.target.value)}
-                    fullWidth
-                    size="small"
-                  >
-                    {bloomTaxonomyLevels.map((level, index) => (
-                      <MenuItem key={index} value={index + 1}>
-                        {index + 1} - {level}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                ) : (
-                  <div>{bloomLevelData?.level ? `${bloomLevelData.level} - ${bloomTaxonomyLevels[bloomLevelData.level - 1]}` : "Not set"}</div>
-                )}
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {isFaculty && (
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        {isFaculty ? (
           <Button 
             variant="contained" 
             color="primary" 
             onClick={handleSave}
             disabled={loading}
+            sx={{ px: 4, py: 1 }}
           >
             Save Grading
           </Button>
-        </Box>
-      )}
-      
-      {!isFaculty && (
-        <Typography align="center" color="textSecondary">
-          Only faculty members can edit and save PO Attainment data.
-        </Typography>
-      )}
+        ) : (
+          <Paper elevation={0} sx={{ p: 2, bgcolor: theme.palette.background.neutral, borderRadius: 1 }}>
+            <Typography align="center" color="text.secondary" variant="body2">
+              Only faculty members can edit and save PO Attainment data.
+            </Typography>
+          </Paper>
+        )}
+      </Box>
     </Box>
   );
 };

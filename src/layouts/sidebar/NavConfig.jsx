@@ -8,6 +8,7 @@ import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
 import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
 import SummarizeOutlinedIcon from '@mui/icons-material/SummarizeOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 
 const adminNavConfig = [
   {

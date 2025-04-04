@@ -1,5 +1,5 @@
 // @mui
-import { Container, Tab, Box, Tabs } from "@mui/material";
+import { Container, Tab, Box, Tabs, useTheme } from "@mui/material";
 // hooks
 import useTabs from "../../hooks/useTabs";
 // components
@@ -18,6 +18,9 @@ import Hobbies from "./Hobbies";
 
 export default function CareerReview() {
   const { currentTab, onChangeTab } = useTabs("Career Counselling");
+  const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
+  
   const ACCOUNT_TABS = [
     {
       value: "Career Counselling",
@@ -60,7 +63,9 @@ export default function CareerReview() {
       component: <Hobbies />,
     },
 
-  ];return (
+  ];
+  
+  return (
     <Page title="Career Review">
       <Container maxWidth="lg">
         <Tabs
@@ -69,6 +74,17 @@ export default function CareerReview() {
           scrollButtons="auto"
           value={currentTab}
           onChange={onChangeTab}
+          sx={{
+            '& .MuiTab-root': {
+              color: isLight ? theme.palette.text.secondary : theme.palette.text.primary,
+              '&.Mui-selected': {
+                color: isLight ? theme.palette.primary.main : theme.palette.info.main
+              }
+            },
+            '& .MuiTabs-indicator': {
+              backgroundColor: isLight ? theme.palette.primary.main : theme.palette.info.main
+            }
+          }}
         >
           {ACCOUNT_TABS.map((tab) => (
             <Tab

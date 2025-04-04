@@ -31,6 +31,8 @@ const Login = () => {
   const password = useRef();
   const { enqueueSnackbar } = useSnackbar();
   const { isFetching, dispatch } = useContext(AuthContext);
+  const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
 
   const [isAdminDemoChecked, setIsAdminDemoChecked] = useState(false);
   const [isFacultyDemoChecked, setIsFacultyDemoChecked] = useState(false);
@@ -75,189 +77,162 @@ const Login = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-
-    // Validate email and password
-    if (!email.current.value || !password.current.value) {
-      enqueueSnackbar("Please enter email and password", {
-        variant: "warning",
-      });
-      return;
-    }
-
     try {
-      const data = await loginCall(
+      await loginCall(
         { email: email.current.value, password: password.current.value },
         dispatch
       );
-      enqueueSnackbar("Login Successful", { variant: "success" });
-
-      // Redirect based on user's roleName
-      if (data.data.user.roleName === "admin") {
-        navigate("/admin/dashboard");
-      } else {
-        // Redirect to regular user dashboard or home page
-        navigate("/");
-      }
-    } catch (error) {
-      console.log("error", error);
-      if (error.response && error.response.status === 401) {
-        enqueueSnackbar("Invalid email or password", { variant: "error" });
-      } else {
-        enqueueSnackbar("Error logging in. Please try again.", {
-          variant: "error",
-        });
-      }
+      navigate("/");
+    } catch (err) {
+      console.log(err);
+      enqueueSnackbar(err?.response?.data?.message || "Login failed", {
+        variant: "error",
+      });
     }
   };
 
   return (
-    <Page title="LOGIN | CMRIT">
-      <Container maxWidth="lg">
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            minHeight: "100vh",
-            justifyContent: "center",
-          }}
-        >
-          <Card
+    <Page title="Login">
+      <Container maxWidth="xl" sx={{ px: 0 }}>
+        <Grid container spacing={2} sx={{ height: "100vh" }}>
+          <Grid
+            item
+            xs={12}
+            md={6}
             sx={{
-              p: 4,
-              width: "100%",
-              borderRadius: 2,
-              backgroundColor: "background.paper",
-              boxShadow: " 0px 0px 20px rgba(0, 0, 0, 0.5)",
+              display: { xs: "none", md: "flex" },
+              backgroundImage: `url(${Illustration})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              borderRadius: "1rem",
+            }}
+          />
+          <Grid
+            item
+            xs={12}
+            md={6}
+            sx={{
+              py: { xs: 4, md: 8 },
+              px: { xs: 4, md: 8 },
+              display: "flex",
+              alignItems: "center",
             }}
           >
-            <Grid container spacing={8}>
-              <Grid item xs={12} md={6}>
-                <Box
-                  sx={{
-                    ml: 3,
-                    postion: "relative",
-                  }}
-                >
-                  <Box sx={{ mb: 7 }}>
-                    <Typography variant="h3" gutterBottom>
-                      Sign in to e-mithru
-                    </Typography>
-
-                    <Typography gutterBottom sx={{ color: "text.secondary" }}>
-                      Welcome back! Please Login to your account.
-                    </Typography>
+            <Box
+              sx={{
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                gap: 3,
+              }}
+            >
+              <Box
+                component="form"
+                noValidate
+                onSubmit={handleLogin}
+                display="flex"
+                flexDirection="column"
+                width="100%"
+                maxWidth={500}
+                mx="auto"
+              >
+                <Stack spacing={3} mb={3}>
+                  <Box display="flex" justifyContent="center" mb={2}>
+                    <img
+                      src={logo}
+                      alt="Logo"
+                      style={{
+                        width: "200px",
+                        filter:
+                          theme.palette.mode === "dark"
+                            ? "invert(100%) brightness(200%)"
+                            : "none",
+                      }}
+                    />
                   </Box>
-                  <Box>
-                    <Stack spacing={2} sx={{ textAlign: "left" }}>
-                      <Box
-                        sx={{
-                          p: 2,
-                          backgroundColor: "background.default",
-                          borderRadius: 1,
-                          mt: 2,
-                        }}
-                      >
-                        <Typography variant="subtitle1" gutterBottom>
-                          Demo Credentials
-                        </Typography>
-                        <FormControlLabel
-                          control={
-                            <Radio
-                              checked={isAdminDemoChecked}
-                              onChange={handleAdminDemoChange}
-                            />
-                          }
-                          label="Admin Demo"
-                        />
-                        <FormControlLabel
-                          control={
-                            <Radio
-                              checked={isFacultyDemoChecked}
-                              onChange={handleFacultyDemoChange}
-                            />
-                          }
-                          label="Faculty Demo"
-                        />
-                        <FormControlLabel
-                          control={
-                            <Radio
-                              checked={isStudentDemoChecked}
-                              onChange={handleStudentDemoChange}
-                            />
-                          }
-                          label="Student Demo"
-                        />
-                      </Box>
-                      <Typography variant="subtitle1">Email Address</Typography>
-                      <TextField
-                        margin="normal"
-                        required
-                        fullWidth
-                        id="email"
-                        name="email"
-                        autoComplete="email"
-                        autoFocus
-                        inputRef={email}
-                      />
-                      <Typography variant="subtitle1">Password</Typography>
-                      <TextField
-                        margin="normal"
-                        required
-                        fullWidth
-                        name="password"
-                        type="password"
-                        id="password"
-                        autoComplete="current-password"
-                        inputRef={password}
-                      />
-
-                      <Button
-                        type="submit"
-                        fullWidth
-                        variant="contained"
-                        sx={{ mt: 3, mb: 2, borderRadius: 1, p: 2 }}
-                        disabled={isFetching}
-                        onClick={handleSubmit}
-                      >
-                        {isFetching ? (
-                          <CircularProgress
-                            size="20px"
-                            sx={{ color: "#fff" }}
-                          />
-                        ) : (
-                          "Log In"
-                        )}
-                      </Button>
-                    </Stack>
-                  </Box>
-                </Box>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    alignItems: "center",
-                    height: "70vh",
-                  }}
-                >
-                  <Image
-                    src={Illustration}
-                    height="65vh"
-                    sx={{
-                      width: "100%",
-                      objectFit: "cover",
-                    }}
-                    duration={1000}
+                  <Typography
+                    variant="h4"
+                    component="h1"
+                    color=""
+                    align="center"
+                    gutterBottom
+                  >
+                    Sign in to e-Mithru
+                  </Typography>
+                  <TextField
+                    label="Email"
+                    variant="outlined"
+                    fullWidth
+                    inputRef={email}
+                    autoComplete="email"
                   />
+                  <TextField
+                    label="Password"
+                    variant="outlined"
+                    type="password"
+                    fullWidth
+                    inputRef={password}
+                    autoComplete="current-password"
+                  />
+
+                  <Stack direction="row" justifyContent="space-between">
+                    <FormControlLabel
+                      control={
+                        <Radio
+                          checked={isAdminDemoChecked}
+                          onChange={handleAdminDemoChange}
+                          name="adminDemo"
+                        />
+                      }
+                      label="Admin Demo"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Radio
+                          checked={isFacultyDemoChecked}
+                          onChange={handleFacultyDemoChange}
+                          name="facultyDemo"
+                        />
+                      }
+                      label="Faculty Demo"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Radio
+                          checked={isStudentDemoChecked}
+                          onChange={handleStudentDemoChange}
+                          name="studentDemo"
+                        />
+                      }
+                      label="Student Demo"
+                    />
+                  </Stack>
+
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    color={isLight ? "primary" : "info"}
+                    size="large"
+                    disabled={isFetching}
+                    startIcon={
+                      isFetching ? <CircularProgress size={20} /> : null
+                    }
+                  >
+                    {isFetching ? "Signing in..." : "Sign in"}
+                  </Button>
+                </Stack>
+
+                <Box sx={{ textAlign: "center", mt: 2 }}>
+                  <Link href="/forgotPassword" underline="hover">
+                    Forgot password?
+                  </Link>
                 </Box>
-              </Grid>
-            </Grid>
-          </Card>
-        </Box>
+              </Box>
+            </Box>
+          </Grid>
+        </Grid>
       </Container>
     </Page>
   );

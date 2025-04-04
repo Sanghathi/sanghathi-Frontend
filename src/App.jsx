@@ -295,6 +295,14 @@ function App() {
                       </ProtectedRouteWrapper>
                     }
                   />
+                  <Route
+                    path="/mentee/dashboard"
+                    element={
+                      <ProtectedRouteWrapper allowedRoles={["student"]}>
+                        <LazyLoadWrapper component={StudentDashboard} />
+                      </ProtectedRouteWrapper>
+                    }
+                  />
                 </Route>
               </Routes>
             </main>

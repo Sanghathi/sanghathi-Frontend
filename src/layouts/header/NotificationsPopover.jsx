@@ -11,6 +11,7 @@ import {
   Divider,
   Typography,
   ListSubheader,
+  useTheme,
 } from "@mui/material";
 
 import NotificationItem from "../../components/notification/NotificationItem";
@@ -25,6 +26,8 @@ import useUnreadNotifications from "../../hooks/useNotifications";
 // ----------------------------------------------------------------------
 
 export default function NotificationsPopover() {
+  const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
   const { unreadNotifications, markAllAsRead } = useUnreadNotifications();
 
   const totalUnRead = unreadNotifications.filter(
@@ -44,9 +47,13 @@ export default function NotificationsPopover() {
   return (
     <>
       <IconButtonAnimate
-        color={open ? "primary" : "default"}
+        color={open ? (isLight ? "primary" : "info") : "default"}
         onClick={handleOpen}
-        sx={{ width: 40, height: 40 }}
+        sx={{ 
+          width: 40, 
+          height: 40, 
+          color: isLight && !open ? theme.palette.text.primary : undefined 
+        }}
       >
         <Badge badgeContent={totalUnRead} color="error">
           <Iconify icon="eva:bell-fill" width={20} height={20} />
@@ -69,7 +76,7 @@ export default function NotificationsPopover() {
 
           {totalUnRead > 0 && (
             <Tooltip title=" Mark all as read">
-              <IconButtonAnimate color="primary" onClick={markAllAsRead}>
+              <IconButtonAnimate color={isLight ? "primary" : "info"} onClick={markAllAsRead}>
                 <Iconify icon="eva:done-all-fill" width={20} height={20} />
               </IconButtonAnimate>
             </Tooltip>
@@ -84,7 +91,12 @@ export default function NotificationsPopover() {
             subheader={
               <ListSubheader
                 disableSticky
-                sx={{ py: 1, px: 2.5, typography: "overline" }}
+                sx={{ 
+                  py: 1, 
+                  px: 2.5, 
+                  typography: "overline",
+                  color: theme.palette.text.secondary
+                }}
               >
                 New
               </ListSubheader>
@@ -103,7 +115,12 @@ export default function NotificationsPopover() {
             subheader={
               <ListSubheader
                 disableSticky
-                sx={{ py: 1, px: 2.5, typography: "overline" }}
+                sx={{ 
+                  py: 1, 
+                  px: 2.5, 
+                  typography: "overline",
+                  color: theme.palette.text.secondary 
+                }}
               >
                 Before that
               </ListSubheader>

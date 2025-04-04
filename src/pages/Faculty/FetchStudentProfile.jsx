@@ -11,6 +11,7 @@ import {
   Paper,
   Typography,
   Button,
+  useTheme,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 const BASE_URL = import.meta.env.VITE_API_URL;
@@ -28,6 +29,8 @@ const fetchStudentProfiles = async (userId) => {
 };
 
 const MenteesList = () => {
+  const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
   const { user } = useContext(AuthContext);
   const [mentees, setMentees] = useState([]);
   const [profiles, setProfiles] = useState({});
@@ -85,35 +88,39 @@ const MenteesList = () => {
         maxWidth: 900,
         margin: "auto",
         mt: 5,
-        bgcolor: "theme.palette.background.paper",
+        bgcolor: theme.palette.background.paper,
       }}
     >
       <Typography
         variant="h6"
         align="center"
-        sx={{ bgcolor: "#4CAF50", color: "white", py: 2 }}
+        sx={{ 
+          bgcolor: isLight ? theme.palette.primary.main : theme.palette.info.main, 
+          color: theme.palette.primary.contrastText, 
+          py: 2 
+        }}
       >
         My Mentees
       </Typography>
       <Table>
-        <TableHead sx={{ bgcolor: "#2a2d32" }}>
+        <TableHead sx={{ bgcolor: isLight ? theme.palette.grey[100] : "#2a2d32" }}>
           <TableRow>
-            <TableCell sx={{ color: "white" }}>
+            <TableCell sx={{ color: isLight ? theme.palette.text.primary : "white" }}>
               <b>Full Name</b>
             </TableCell>
-            <TableCell sx={{ color: "white" }}>
+            <TableCell sx={{ color: isLight ? theme.palette.text.primary : "white" }}>
               <b>Email</b>
             </TableCell>
-            <TableCell sx={{ color: "white" }}>
+            <TableCell sx={{ color: isLight ? theme.palette.text.primary : "white" }}>
               <b>Phone</b>
             </TableCell>
-            <TableCell sx={{ color: "white" }}>
+            <TableCell sx={{ color: isLight ? theme.palette.text.primary : "white" }}>
               <b>Department</b>
             </TableCell>
-            <TableCell sx={{ color: "white" }}>
+            <TableCell sx={{ color: isLight ? theme.palette.text.primary : "white" }}>
               <b>Semester</b>
             </TableCell>
-            <TableCell sx={{ color: "white" }}>
+            <TableCell sx={{ color: isLight ? theme.palette.text.primary : "white" }}>
               <b>Actions</b>
             </TableCell>
           </TableRow>
@@ -121,27 +128,27 @@ const MenteesList = () => {
         <TableBody>
           {mentees.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} align="center" sx={{ color: "white" }}>
+              <TableCell colSpan={7} align="center" sx={{ color: theme.palette.text.primary }}>
                 No mentees allotted.
               </TableCell>
             </TableRow>
           ) : (
             mentees.map((mentee) => (
-              <TableRow key={mentee._id}>
-                <TableCell sx={{ color: "white" }}>{mentee.name}</TableCell>
-                <TableCell sx={{ color: "white" }}>{mentee.email}</TableCell>
-                <TableCell sx={{ color: "white" }}>{mentee.phone}</TableCell>
-                <TableCell sx={{ color: "white" }}>
+              <TableRow key={mentee._id} hover>
+                <TableCell sx={{ color: theme.palette.text.primary }}>{mentee.name}</TableCell>
+                <TableCell sx={{ color: theme.palette.text.primary }}>{mentee.email}</TableCell>
+                <TableCell sx={{ color: theme.palette.text.primary }}>{mentee.phone}</TableCell>
+                <TableCell sx={{ color: theme.palette.text.primary }}>
                   {profiles[mentee._id]?.department || "N/A"}
                 </TableCell>
-                <TableCell sx={{ color: "white" }}>
+                <TableCell sx={{ color: theme.palette.text.primary }}>
                   {profiles[mentee._id]?.sem || "N/A"}
                 </TableCell>
                 <TableCell>
                   <Button
                     variant="contained"
-                    color="primary"
-                    onClick={() => navigate(`/faculty/mentee-profile/${mentee._id}`)} // Pass mentee._id
+                    color={isLight ? "primary" : "info"}
+                    onClick={() => navigate(`/faculty/mentee-profile/${mentee._id}`)}
                   >
                     Dashboard
                   </Button>

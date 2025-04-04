@@ -22,6 +22,7 @@ const FacultyProfileInfo = () => {
   const [mentorId, setMentorId] = useState("");
   const [facultyProfile, setFacultyProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const isLight = theme.palette.mode === "light";
 
   const fetchMentorId = useCallback(async () => {
     if (!user || !user._id) {
@@ -117,7 +118,7 @@ const FacultyProfileInfo = () => {
         >
           <Table>
             <TableHead>
-              <TableRow sx={{ backgroundColor: theme.palette.primary.main }}>
+              <TableRow sx={{ backgroundColor: isLight ? theme.palette.primary.main : theme.palette.info.main }}>
                 <TableCell
                   colSpan={2}
                   sx={{

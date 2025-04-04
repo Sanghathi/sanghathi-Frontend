@@ -8,6 +8,7 @@ import {
   Button,
   Box,
   Typography,
+  useTheme
 } from "@mui/material";
 import WarningIcon from "@mui/icons-material/Warning";
 
@@ -18,6 +19,9 @@ export default function ConfirmationDialog({
   onClose,
   onConfirm,
 }) {
+  const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
+  
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg">
       <Box
@@ -35,10 +39,10 @@ export default function ConfirmationDialog({
         <DialogContentText>{message}</DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="primary">
+        <Button onClick={onClose} color={isLight ? "primary" : "info"}>
           Cancel
         </Button>
-        <Button onClick={onConfirm} color="primary" autoFocus>
+        <Button onClick={onConfirm} color={isLight ? "primary" : "info"} autoFocus>
           Confirm
         </Button>
       </DialogActions>

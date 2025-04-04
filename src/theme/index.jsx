@@ -34,6 +34,11 @@ export default function ThemeProvider({ children }) {
       shape: { borderRadius: 8 },
       shadows: isLight ? shadows.light : shadows.dark,
       customShadows: isLight ? customShadows.light : customShadows.dark,
+      utils: {
+        getColorByMode: (lightColor = 'primary', darkColor = 'info') => {
+          return isLight ? lightColor : darkColor;
+        }
+      }
     }),
     [isLight]
   );

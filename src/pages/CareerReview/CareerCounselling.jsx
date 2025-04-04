@@ -1,12 +1,9 @@
 import React, { useEffect, useState, useCallback, useContext } from "react";
 import { useSnackbar } from "notistack";
-
 import api from "../../utils/axios";
-
 import { useForm } from "react-hook-form";
 import { AuthContext } from "../../context/AuthContext";
-
-import { Box, Grid, Card, Stack } from "@mui/material";
+import { Box, Grid, Card, Stack, useTheme } from "@mui/material";
 import { LoadingButton } from "@mui/lab";
 import { useSearchParams } from "react-router-dom";
 
@@ -21,6 +18,9 @@ export default function CareerCounselling() {
   const { user } = useContext(AuthContext);
   const [searchParams] = useSearchParams();
   const menteeId = searchParams.get('menteeId');
+  const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
+  
   console.log("User : ",user);
   console.log("id: ",menteeId);
   
@@ -65,7 +65,7 @@ export default function CareerCounselling() {
         enqueueSnackbar("Error fetching career counselling data", { variant: "error" });
       }
     }
-  }, [user._id, setValue]);
+  }, [user._id, setValue, menteeId, enqueueSnackbar]);
   
 
   useEffect(() => {
@@ -91,7 +91,7 @@ export default function CareerCounselling() {
           variant: "error",
         });
       }
-    }, [enqueueSnackbar, reset,fetchCareerCounselling, user]);
+    }, [enqueueSnackbar, user._id, fetchCareerCounselling]);
 
   const TechnicalStudies = ["Mtech in India", "Mtech in US", "Others"];
   const ManagementStudies = ["MBA in India", "MS in US", "Others"];
@@ -205,38 +205,29 @@ export default function CareerCounselling() {
                 rows={4}
               />
             </Grid>
-
+            
             <Grid item xs={12}>
-              <RHFTextField
-                name="Certification"
-                label="Certification Planning to get:"
-                InputLabelProps={{ shrink: isDataFetched }}
-                multiline
-                fullWidth
-                rows={4}
-              />
-            </Grid>
-          </Grid>
-
-          <Stack spacing={3} alignItems="flex-end" sx={{ mt: 3 }}>
-              <Box display="flex" gap={1}>
-                {import.meta.env.MODE === "development" && (
+              <Stack spacing={3} alignItems="flex-end" sx={{ mt: 3 }}>
+                <Box display="flex" gap={1}>
                   <LoadingButton
                     variant="outlined"
+                    color={isLight ? "primary" : "info"}
                     onClick={handleReset}
                   >
                     Reset
                   </LoadingButton>
-                )}
-                <LoadingButton
-                  type="submit"
-                  variant="contained"
-                  loading={isSubmitting}
-                >
-                  Save
-                </LoadingButton>
-              </Box>
-            </Stack>
+                  <LoadingButton
+                    type="submit"
+                    variant="contained"
+                    color={isLight ? "primary" : "info"}
+                    loading={isSubmitting}
+                  >
+                    Save
+                  </LoadingButton>
+                </Box>
+              </Stack>
+            </Grid>
+          </Grid>
         </Card>
       </FormProvider>
   );

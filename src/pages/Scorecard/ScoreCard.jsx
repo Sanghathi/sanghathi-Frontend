@@ -1,5 +1,5 @@
 // @mui
-import { Container, Tab, Box, Tabs } from "@mui/material";
+import { Container, Tab, Box, Tabs, useTheme } from "@mui/material";
 // hooks
 import useTabs from "../../hooks/useTabs";
 // components
@@ -11,8 +11,11 @@ import Iat from "./Iat";
 import External from "./External";
 
 
-export default function CareerReview() {
+export default function ScoreCard() {
   const { currentTab, onChangeTab } = useTabs("Iat");
+  const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
+  
   const ACCOUNT_TABS = [
     {
       value: "Iat",
@@ -25,7 +28,9 @@ export default function CareerReview() {
       component: <External/>,
     },
     
-  ];return (
+  ];
+  
+  return (
     <Page title="ScoreCard">
       <Container maxWidth="lg">
         <Tabs
@@ -34,6 +39,17 @@ export default function CareerReview() {
           scrollButtons="auto"
           value={currentTab}
           onChange={onChangeTab}
+          sx={{
+            '& .MuiTab-root': {
+              color: isLight ? theme.palette.text.secondary : theme.palette.text.primary,
+              '&.Mui-selected': {
+                color: isLight ? theme.palette.primary.main : theme.palette.info.main
+              }
+            },
+            '& .MuiTabs-indicator': {
+              backgroundColor: isLight ? theme.palette.primary.main : theme.palette.info.main
+            }
+          }}
         >
           {ACCOUNT_TABS.map((tab) => (
             <Tab

@@ -16,6 +16,8 @@ const NavItemButton = ({
   isDropdown,
   onToggleDropdown,
 }) => {
+  const isLight = theme.palette.mode === 'light';
+  
   return (
     <ListItemButton
       onClick={onToggleDropdown}
@@ -25,11 +27,15 @@ const NavItemButton = ({
           active === lcText ? navButtonBackgroundColor : "transparent",
         color:
           active === lcText
-            ? theme.palette.primary[600]
-            : theme.palette.secondary[200],
+            ? isLight ? theme.palette.primary.main : theme.palette.info.main
+            : isLight 
+              ? theme.palette.text.primary 
+              : theme.palette.secondary[200],
         "&:hover": {
-          backgroundColor: theme.palette.secondary[400],
-          color: theme.palette.primary[600],
+          backgroundColor: isLight 
+            ? theme.palette.grey[200] 
+            : theme.palette.secondary[400],
+          color: isLight ? theme.palette.primary.main : theme.palette.info.main,
         },
       }}
     >
@@ -38,8 +44,10 @@ const NavItemButton = ({
           ml: "1rem",
           color:
             active === lcText
-              ? theme.palette.primary[600]
-              : theme.palette.secondary[200],
+              ? isLight ? theme.palette.primary.main : theme.palette.info.main
+              : isLight 
+                ? theme.palette.text.primary 
+                : theme.palette.secondary[200],
         }}
       >
         {icon}
@@ -49,8 +57,12 @@ const NavItemButton = ({
           <Typography
             sx={{
               fontSize: "0.9rem",
-              fontWeight: theme.typography.body2.fontWeight,
-              color: theme.palette.text,
+              fontWeight: active === lcText ? 600 : theme.typography.body2.fontWeight,
+              color: active === lcText
+                ? isLight ? theme.palette.primary.main : theme.palette.info.main
+                : isLight 
+                  ? theme.palette.text.primary 
+                  : theme.palette.secondary[200],
             }}
           >
             {text}

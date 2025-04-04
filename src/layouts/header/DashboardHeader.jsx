@@ -33,6 +33,7 @@ import useSettings from "../../hooks/useSettings";
 
 const DashboardHeader = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
   const { onToggleMode } = useSettings();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -54,14 +55,18 @@ const DashboardHeader = ({ isSidebarOpen, setIsSidebarOpen }) => {
     <AppBar
       position="static"
       sx={{
-        background: "none",
-        boxShadow: "none",
+        background: isLight ? theme.palette.background.paper : "none",
+        boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+        borderBottom: isLight ? `1px solid ${theme.palette.divider}` : "none",
       }}
     >
       <Toolbar sx={{ justifyContent: "space-between" }}>
         {/* LEFT SIDE */}
         <FlexBetween gap="1.5rem">
-          <IconButton onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+          <IconButton 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            sx={{ color: isLight ? theme.palette.text.primary : "inherit" }}
+          >
             <MenuIcon />
           </IconButton>
           {/* Search Bar */}
@@ -75,7 +80,10 @@ const DashboardHeader = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
         {/* RIGHT SIDE */}
         <FlexBetween gap="1rem">
-          <IconButton onClick={handleClick}>
+          <IconButton 
+            onClick={handleClick}
+            sx={{ color: isLight ? theme.palette.text.primary : "inherit" }}
+          >
             {theme.palette.mode === "dark" ? (
               <DarkModeOutlined />
             ) : (
@@ -98,15 +106,15 @@ const DashboardHeader = ({ isSidebarOpen, setIsSidebarOpen }) => {
             }}
           >
             <MenuItem onClick={() => handleThemeChange("light")}>
-              <LightModeOutlined sx={{ marginRight: "16px" }} />
+              <LightModeOutlined sx={{ marginRight: "16px", color: isLight ? theme.palette.primary.main : theme.palette.info.main }} />
               Light Mode
             </MenuItem>
             <MenuItem onClick={() => handleThemeChange("dark")}>
-              <DarkModeOutlined sx={{ marginRight: "16px" }} />
+              <DarkModeOutlined sx={{ marginRight: "16px", color: isLight ? theme.palette.primary.main : theme.palette.info.main }} />
               Dark Mode
             </MenuItem>
             <MenuItem onClick={() => handleThemeChange("system")}>
-              <SettingsOutlined sx={{ marginRight: "16px" }} />
+              <SettingsOutlined sx={{ marginRight: "16px", color: isLight ? theme.palette.primary.main : theme.palette.info.main }} />
               System
             </MenuItem>
           </Menu>

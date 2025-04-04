@@ -3,7 +3,7 @@ import { useSnackbar } from "notistack";
 import api from "../../utils/axios";
 import { useForm, useFieldArray } from "react-hook-form";
 import { AuthContext } from "../../context/AuthContext";
-import { Box, Grid, Card, Stack, Button, IconButton, Typography, TextField } from "@mui/material";
+import { Box, Grid, Card, Stack, Button, IconButton, Typography, TextField, useTheme } from "@mui/material";
 import { LoadingButton } from "@mui/lab";
 import { Delete as DeleteIcon } from "@mui/icons-material";
 import { FormProvider, RHFTextField } from "../../components/hook-form";
@@ -14,6 +14,8 @@ export default function ClubEvents() {
   const { user } = useContext(AuthContext);
   const [searchParams] = useSearchParams();
   const menteeId = searchParams.get('menteeId');
+  const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
   console.log("User : ",user);
   console.log("id: ",menteeId);
 
@@ -138,6 +140,7 @@ export default function ClubEvents() {
         <Grid item xs={12}>
           <Button
             variant="contained"
+            color={isLight ? "primary" : "info"}
             onClick={() => append({ clubName: "", eventTitle: "", eventDate: null })}
             sx={{ mt: 2, display: "block", mx: "auto" }}
           >
@@ -145,19 +148,24 @@ export default function ClubEvents() {
           </Button>
         </Grid>
         <Grid item xs={12}>
-          <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 3 }}>
+          <Stack spacing={3} alignItems="flex-end" sx={{ mt: 3 }}>
             <Box display="flex" gap={1}>
-                {import.meta.env.MODE === "development" && (
-                  <LoadingButton 
-                  variant="outlined" 
-                  onClick={handleReset}>
-                    Reset
-                  </LoadingButton>
-                )}
-                <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-                  Save
+              {import.meta.env.MODE === "development" && (
+                <LoadingButton 
+                variant="outlined"
+                color={isLight ? "primary" : "info"}
+                onClick={handleReset}>
+                  Reset
                 </LoadingButton>
-              </Box>
+              )}
+              <LoadingButton 
+                type="submit" 
+                variant="contained"
+                color={isLight ? "primary" : "info"}
+                loading={isSubmitting}>
+                Save
+              </LoadingButton>
+            </Box>
           </Stack>
         </Grid>
       </Grid>
