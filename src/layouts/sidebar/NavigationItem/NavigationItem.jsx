@@ -26,8 +26,6 @@ const NavigationItem = ({
     pathname === link || pathname.startsWith(`${link}/`) ? lcText : "";
 
   const isDropdown = dropdownItems && dropdownItems.length > 0;
-  const navButtonBackgroundColor =
-    theme.palette.mode === "dark" ? "#37404a" : "#e9eaeb";
 
   const onToggleDropdown = () => {
     setActive(active === lcText ? "" : lcText);
@@ -52,7 +50,6 @@ const NavigationItem = ({
           lcText={lcText}
           theme={theme}
           active={isActive}
-          navButtonBackgroundColor={navButtonBackgroundColor}
           isDropdown={isDropdown}
           onToggleDropdown={
             isDropdown ? onToggleDropdown : () => onItemClick(link)

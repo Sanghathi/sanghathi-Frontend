@@ -12,6 +12,8 @@ import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 const DropdownItem = ({ itemText, itemLink, icon, active, setActive }) => {
   const navigate = useNavigate();
   const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
+  const colorMode = isLight ? 'primary' : 'info';
 
   return (
     <ListItem key={itemText}>
@@ -22,10 +24,10 @@ const DropdownItem = ({ itemText, itemLink, icon, active, setActive }) => {
         sx={{
           borderRadius: "8px",
           backgroundColor: "transparent",
-          color: theme.palette.secondary[200],
+          color: theme.palette.text.secondary,
           "&:hover": {
-            backgroundColor: theme.palette.secondary[400],
-            color: theme.palette.primary[600],
+            backgroundColor: theme.palette.action.hover,
+            color: theme.palette[colorMode].main,
           },
           "& .MuiListItemIcon-root": {
             minWidth: 0,
@@ -38,8 +40,8 @@ const DropdownItem = ({ itemText, itemLink, icon, active, setActive }) => {
             sx={{
               color:
                 active === itemText.toLowerCase()
-                  ? theme.palette.primary[600]
-                  : "inherit",
+                  ? theme.palette[colorMode].main
+                  : theme.palette.text.secondary,
               width: active === itemText.toLowerCase() ? "0.8rem" : "0.5rem",
             }}
           />
@@ -51,7 +53,7 @@ const DropdownItem = ({ itemText, itemLink, icon, active, setActive }) => {
               sx={{
                 fontSize: "0.8rem",
                 fontWeight: theme.typography.body2.fontWeight,
-                color: theme.palette.text,
+                color: theme.palette.text.primary,
               }}
             >
               {itemText}

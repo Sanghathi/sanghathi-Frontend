@@ -27,6 +27,8 @@ const POAttainmentGrading = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [searchParams] = useSearchParams();
   const menteeId = searchParams.get('menteeId');
+  const isLight = theme.palette.mode === 'light';
+  const colorMode = isLight ? 'primary' : 'info';
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -198,8 +200,6 @@ const POAttainmentGrading = () => {
     color: theme.palette.text.primary,
   };
 
-  const isLight = theme.palette.mode === 'light';
-
   return (
     <Box sx={{ p: 2, maxWidth: 1200, mx: 'auto' }}>
       <Paper elevation={1} sx={{ p: 3, mb: 3, backgroundColor: theme.palette.background.paper }}>
@@ -208,7 +208,7 @@ const POAttainmentGrading = () => {
           component="h1" 
           gutterBottom 
           align="center" 
-          color={isLight ? "primary.main" : "info.main"}
+          color={colorMode}
         >
           Guide for Mentor to Grade Mentee's PO Attainment and Bloom Taxonomy Level
         </Typography>
@@ -230,6 +230,7 @@ const POAttainmentGrading = () => {
               onChange={handleSemesterChange}
               sx={{ minWidth: 120 }}
               size="small"
+              color={colorMode}
             >
               {getAvailableSemesters().map((sem) => (
                 <MenuItem key={sem} value={sem}>
@@ -243,7 +244,7 @@ const POAttainmentGrading = () => {
 
       {/* PO Correlation Table */}
       <Paper elevation={1} sx={{ p: 3, mb: 3, backgroundColor: theme.palette.background.paper }}>
-        <Typography variant="h5" gutterBottom align="center" sx={{ mb: 2, color: theme.palette.primary.dark }}>
+        <Typography variant="h5" gutterBottom align="center" sx={{ mb: 2, color: isLight ? theme.palette.primary.dark : theme.palette.info.main }}>
           Student Wise PO Correlation
         </Typography>
         <TableContainer sx={{ mb: 2, border: `1px solid ${theme.palette.divider}` }}>
@@ -276,6 +277,7 @@ const POAttainmentGrading = () => {
                         onChange={(e) => handlePOChange(po.code, 'cl', e.target.value)}
                         fullWidth
                         size="small"
+                        color={colorMode}
                       >
                         {correlationLevels.map((level) => (
                           <MenuItem key={level} value={level}>
@@ -295,6 +297,7 @@ const POAttainmentGrading = () => {
                         value={poAttainmentData[po.code]?.justification || ""}
                         onChange={(e) => handlePOChange(po.code, 'justification', e.target.value)}
                         placeholder={`${po.desc}`}
+                        color={colorMode}
                       />
                     ) : (
                       <Typography variant="body2">{poAttainmentData[po.code]?.justification || ""}</Typography>
@@ -309,7 +312,7 @@ const POAttainmentGrading = () => {
 
       {/* Bloom Level Table */}
       <Paper elevation={1} sx={{ p: 3, mb: 3, backgroundColor: theme.palette.background.paper }}>
-        <Typography variant="h5" gutterBottom align="center" sx={{ mb: 2, color: theme.palette.primary.dark }}>
+        <Typography variant="h5" gutterBottom align="center" sx={{ mb: 2, color: isLight ? theme.palette.primary.dark : theme.palette.info.main }}>
           Bloom Level
         </Typography>
         <TableContainer sx={{ mb: 2, border: `1px solid ${theme.palette.divider}` }}>
@@ -350,6 +353,7 @@ const POAttainmentGrading = () => {
                       onChange={(e) => handleBloomLevelChange(e.target.value)}
                       fullWidth
                       size="small"
+                      color={colorMode}
                     >
                       {bloomTaxonomyLevels.map((level, index) => (
                         <MenuItem key={index} value={index + 1}>
@@ -375,19 +379,16 @@ const POAttainmentGrading = () => {
         {isFaculty ? (
           <Button 
             variant="contained" 
-            color="primary" 
+            color={colorMode}
             onClick={handleSave}
             disabled={loading}
-            sx={{ px: 4, py: 1 }}
           >
-            Save Grading
+            Save PO Attainment Grading
           </Button>
         ) : (
-          <Paper elevation={0} sx={{ p: 2, bgcolor: theme.palette.background.neutral, borderRadius: 1 }}>
-            <Typography align="center" color="text.secondary" variant="body2">
-              Only faculty members can edit and save PO Attainment data.
-            </Typography>
-          </Paper>
+          <Typography variant="body2" color="text.secondary">
+            Only faculty members can edit PO attainment grading
+          </Typography>
         )}
       </Box>
     </Box>

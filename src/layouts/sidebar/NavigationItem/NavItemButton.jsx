@@ -17,6 +17,7 @@ const NavItemButton = ({
   onToggleDropdown,
 }) => {
   const isLight = theme.palette.mode === 'light';
+  const colorMode = isLight ? 'primary' : 'info';
   
   return (
     <ListItemButton
@@ -24,18 +25,18 @@ const NavItemButton = ({
       sx={{
         borderRadius: "8px",
         backgroundColor:
-          active === lcText ? navButtonBackgroundColor : "transparent",
+          active === lcText 
+            ? isLight 
+              ? theme.palette.grey[100] 
+              : theme.palette.action.selected
+            : "transparent",
         color:
           active === lcText
-            ? isLight ? theme.palette.primary.main : theme.palette.info.main
-            : isLight 
-              ? theme.palette.text.primary 
-              : theme.palette.secondary[200],
+            ? theme.palette[colorMode].main
+            : theme.palette.text.primary,
         "&:hover": {
-          backgroundColor: isLight 
-            ? theme.palette.grey[200] 
-            : theme.palette.secondary[400],
-          color: isLight ? theme.palette.primary.main : theme.palette.info.main,
+          backgroundColor: theme.palette.action.hover,
+          color: theme.palette[colorMode].main,
         },
       }}
     >
@@ -44,10 +45,8 @@ const NavItemButton = ({
           ml: "1rem",
           color:
             active === lcText
-              ? isLight ? theme.palette.primary.main : theme.palette.info.main
-              : isLight 
-                ? theme.palette.text.primary 
-                : theme.palette.secondary[200],
+              ? theme.palette[colorMode].main
+              : theme.palette.text.primary,
         }}
       >
         {icon}
@@ -59,10 +58,8 @@ const NavItemButton = ({
               fontSize: "0.9rem",
               fontWeight: active === lcText ? 600 : theme.typography.body2.fontWeight,
               color: active === lcText
-                ? isLight ? theme.palette.primary.main : theme.palette.info.main
-                : isLight 
-                  ? theme.palette.text.primary 
-                  : theme.palette.secondary[200],
+                ? theme.palette[colorMode].main
+                : theme.palette.text.primary,
             }}
           >
             {text}

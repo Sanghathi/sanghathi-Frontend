@@ -25,41 +25,43 @@ import PrevAcademic from "./PrevAcademic";
 
 // ----------------------------------------------------------------------
 
+
 export default function StudentProfile() {
   const { currentTab, onChangeTab } = useTabs("Student Details");
   const theme = useTheme();
   const isLight = theme.palette.mode === 'light';
+  const colorMode = isLight ? 'primary' : 'info';
   
   const ACCOUNT_TABS = [
     {
       value: "Student Details",
       icon: <Iconify icon={"ic:round-account-box"} width={20} height={20} />,
-      component: <StudentDetailsForm />,
+      component: <StudentDetailsForm colorMode={colorMode} />,
     },
     {
       value: "Parent Details",
       icon: <Iconify icon={"ic:round-account-box"} width={20} height={20} />,
-      component: <ParentsDetails />,
+      component: <ParentsDetails colorMode={colorMode} />,
     },
     {
       value: "Guardian Details",
       icon: <Iconify icon={"ic:round-receipt"} width={20} height={20} />,
-      component: <LocalGuardianForm />,
+      component: <LocalGuardianForm colorMode={colorMode} />,
     },
     {
       value: "Contact Details",
       icon: <Iconify icon={"eva:bell-fill"} width={20} height={20} />,
-      component: <ContactDetails />,
+      component: <ContactDetails colorMode={colorMode} />,
     },
     {
       value: "Academic Details",
       icon: <Iconify icon={"eva:share-fill"} width={20} height={20} />,
-      component: <PrevAcademic />,
+      component: <PrevAcademic colorMode={colorMode} />,
     },
     {
       value: "Admission Details",
       icon: <Iconify icon={"eva:share-fill"} width={20} height={20} />,
-      component: <AdmissionDetails />,
+      component: <AdmissionDetails colorMode={colorMode} />,
     },
   ];
 

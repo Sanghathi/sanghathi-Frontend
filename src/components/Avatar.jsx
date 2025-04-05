@@ -8,6 +8,17 @@ import { Avatar as MUIAvatar } from "@mui/material";
 const Avatar = forwardRef(
   ({ color = "default", children, sx, ...other }, ref) => {
     const theme = useTheme();
+    const isLight = theme.palette.mode === 'light';
+    
+    // Map color to theme-appropriate color in dark mode
+    const getThemeColor = (colorValue) => {
+      if (theme.palette.mode === 'dark' && colorValue === 'primary') {
+        return 'info';
+      }
+      return colorValue;
+    };
+    
+    const mappedColor = getThemeColor(color);
 
     if (color === "default") {
       return (
@@ -22,8 +33,8 @@ const Avatar = forwardRef(
         ref={ref}
         sx={{
           fontWeight: theme.typography.fontWeightMedium,
-          color: theme.palette.primary.contrastText,
-          backgroundColor: theme.palette.primary.main,
+          color: theme.palette[mappedColor].contrastText,
+          backgroundColor: theme.palette[mappedColor].main,
           ...sx,
         }}
         {...other}

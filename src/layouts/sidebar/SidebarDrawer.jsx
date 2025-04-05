@@ -23,17 +23,17 @@ const SidebarDrawer = ({
       sx={{
         flexShrink: 0,
         width: drawerWidth,
-        boxShadow:
-          theme.palette.mode === "light"
-            ? "0 0 6px rgba(0, 0, 0, 0.1)"
-            : "none",
+        boxShadow: theme.palette.mode === "light"
+          ? "0 0 6px rgba(0, 0, 0, 0.1)"
+          : "0 0 8px rgba(0, 0, 0, 0.3)",
         "& .MuiDrawer-paper": {
+          color: theme.palette.text.primary,
+          backgroundColor: theme.palette.background.paper,
           width: drawerWidth,
-          borderRight: "1px dashed rgba(145, 158, 171, 0.2)",
-          boxShadow:
-            theme.palette.mode === "light"
-              ? "0 0 6px rgba(0, 0, 0, 0.1)"
-              : "none",
+          borderRight: `1px solid ${theme.palette.divider}`,
+          boxShadow: theme.palette.mode === "light"
+            ? "0 0 6px rgba(0, 0, 0, 0.1)"
+            : "0 0 8px rgba(0, 0, 0, 0.3)",
         },
       }}
     >

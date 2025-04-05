@@ -139,7 +139,7 @@ const Login = () => {
                 mx="auto"
               >
                 <Stack spacing={3} mb={3}>
-                  <Box display="flex" justifyContent="center" mb={2}>
+                  <Box display="flex" justifyContent="center">
                     <img
                       src={logo}
                       alt="Logo"
@@ -147,7 +147,7 @@ const Login = () => {
                         width: "200px",
                         filter:
                           theme.palette.mode === "dark"
-                            ? "invert(100%) brightness(200%)"
+                            ? "invert(50%) brightness(200%)"
                             : "none",
                       }}
                     />
@@ -225,7 +225,16 @@ const Login = () => {
                 </Stack>
 
                 <Box sx={{ textAlign: "center", mt: 2 }}>
-                  <Link href="/forgotPassword" underline="hover">
+                  <Link 
+                    href="/forgotPassword" 
+                    underline="hover"
+                    sx={{ 
+                      color: isLight ? theme.palette.primary.main : theme.palette.info.main,
+                      '&:hover': {
+                        color: isLight ? theme.palette.primary.dark : theme.palette.info.light,
+                      }
+                    }}
+                  >
                     Forgot password?
                   </Link>
                 </Box>

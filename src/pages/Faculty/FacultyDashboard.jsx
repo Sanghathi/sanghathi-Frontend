@@ -32,8 +32,12 @@ import {
   Group as GroupIcon,
   Dashboard as DashboardIcon,
   LiveHelp as LiveHelpIcon,
+  Info as InfoOutlinedIcon
 } from "@mui/icons-material";
 import { blueGrey } from "@mui/material/colors";
+
+import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
+import HdrStrongIcon from '@mui/icons-material/HdrStrong';
 import { alpha } from "@mui/material/styles";
 
 import { Link } from "react-router-dom";
@@ -283,7 +287,7 @@ const FacultyDashboard = () => {
             <Grid item xs={12} sm={6} md={isLight ? 6 : 6} lg={isLight ? 4 : 4}>
               <StudentTile
                 title="Threads"
-                icon={<LiveHelpIcon />}
+                icon={<QuestionAnswerIcon />}
                 link="/threads"
               />
             </Grid>
@@ -299,7 +303,7 @@ const FacultyDashboard = () => {
             <Grid item xs={12} sm={6} md={isLight ? 6 : 6} lg={isLight ? 4 : 4}>
               <StudentTile
                 title="Campus Buddy"
-                icon={<SummarizeOutlinedIcon />}
+                icon={<HdrStrongIcon />}
                 link="/campus-buddy"
               />
             </Grid>

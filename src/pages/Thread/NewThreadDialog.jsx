@@ -24,11 +24,12 @@ import {
 } from "@mui/material";
 import { Close, Search } from "@mui/icons-material";
 
-const NewThreadDialog = ({ open, onClose, users, currentUser, onSave }) => {
+const NewThreadDialog = ({ open, onClose, users, currentUser, onSave, colorMode = 'primary' }) => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredUsers, setFilteredUsers] = useState([]);
+  const isLight = theme.palette.mode === 'light';
 
   const [newThreadData, setNewThreadData] = useState({
     title: "",
@@ -131,10 +132,11 @@ const NewThreadDialog = ({ open, onClose, users, currentUser, onSave }) => {
               value={newThreadData.title}
               onChange={handleNewThreadChange}
               fullWidth
+              color={colorMode}
             />
           </Box>
           <Box sx={{ py: 1 }}>
-            <InputLabel shrink htmlFor="tag-select">
+            <InputLabel shrink htmlFor="tag-select" color={colorMode}>
               Topic
             </InputLabel>
 
@@ -144,6 +146,7 @@ const NewThreadDialog = ({ open, onClose, users, currentUser, onSave }) => {
               onChange={handleNewThreadChange}
               inputProps={{ name: "topic", id: "topic-select" }}
               fullWidth
+              color={colorMode}
             >
               <MenuItem value="Topic" disabled>
                 Topic
@@ -163,13 +166,14 @@ const NewThreadDialog = ({ open, onClose, users, currentUser, onSave }) => {
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton>
+                    <IconButton color={colorMode}>
                       <Search />
                     </IconButton>
                   </InputAdornment>
                 ),
               }}
               fullWidth
+              color={colorMode}
             />
           </Box>
         </Box>
@@ -219,7 +223,7 @@ const NewThreadDialog = ({ open, onClose, users, currentUser, onSave }) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={handleCloseDialog}>Cancel</Button>
-        <Button onClick={handleSave}>Save</Button>
+        <Button onClick={handleSave} color={colorMode}>Save</Button>
       </DialogActions>
     </Dialog>
   );

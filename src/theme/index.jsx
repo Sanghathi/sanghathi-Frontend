@@ -45,6 +45,9 @@ export default function ThemeProvider({ children }) {
 
   const theme = createTheme(themeOptions);
 
+  // Apply global theme object with dark mode color mapping
+  theme.colorMode = isLight ? 'primary' : 'info';
+
   return (
     <StyledEngineProvider injectFirst>
       <MUIThemeProvider theme={theme}>

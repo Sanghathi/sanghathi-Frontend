@@ -18,6 +18,7 @@ import {
   ListItemIcon,
   Paper,
   TablePagination,
+  useTheme,
 } from "@mui/material";
 import { MoreVert, Close, Delete, Edit } from "@mui/icons-material";
 
@@ -26,11 +27,14 @@ const ThreadList = ({
   onThreadClick,
   onThreadEdit,
   onThreadDelete,
+  colorMode = 'primary',
 }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [anchorEl, setAnchorEl] = useState(false);
   const [selectedThread, setSelectedThread] = useState(null);
+  const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
 
   console.log("THREADS", threads);
 
@@ -125,7 +129,7 @@ const ThreadList = ({
                     >
                       <Button
                         variant="contained"
-                        color="primary"
+                        color={colorMode}
                         onClick={() => onThreadClick(thread)}
                       >
                         View
@@ -148,7 +152,7 @@ const ThreadList = ({
                           }}
                         >
                           <ListItemIcon>
-                            <Edit fontSize="small" />
+                            <Edit fontSize="small" color={colorMode} />
                           </ListItemIcon>
                           Edit
                         </MenuItem>
@@ -159,7 +163,7 @@ const ThreadList = ({
                           }}
                         >
                           <ListItemIcon>
-                            <Delete fontSize="small" />
+                            <Delete fontSize="small" color="error" />
                           </ListItemIcon>
                           Delete
                         </MenuItem>

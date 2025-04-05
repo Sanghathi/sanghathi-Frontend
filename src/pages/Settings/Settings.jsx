@@ -7,6 +7,7 @@ import {
   Typography,
   Button,
   Alert,
+  useTheme,
 } from "@mui/material";
 import { useSnackbar } from "notistack";
 import api from "../../utils/axios";
@@ -21,6 +22,9 @@ export default function Settings() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
+  const colorMode = isLight ? 'primary' : 'info';
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -93,7 +97,7 @@ export default function Settings() {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant="h4" gutterBottom color={colorMode}>
         Settings
       </Typography>
 
@@ -123,6 +127,7 @@ export default function Settings() {
               value={formData.currentPassword}
               onChange={handleChange}
               required
+              color={colorMode}
             />
 
             <TextField
@@ -133,6 +138,7 @@ export default function Settings() {
               value={formData.newPassword}
               onChange={handleChange}
               required
+              color={colorMode}
             />
 
             <TextField
@@ -143,11 +149,13 @@ export default function Settings() {
               value={formData.confirmPassword}
               onChange={handleChange}
               required
+              color={colorMode}
             />
 
             <Button
               type="submit"
               variant="contained"
+              color={colorMode}
               size="large"
               disabled={loading}
             >

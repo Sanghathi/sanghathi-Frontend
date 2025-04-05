@@ -10,6 +10,7 @@ import {
   Button,
   CircularProgress,
   Container,
+  useTheme,
 } from "@mui/material";
 
 import { useSnackbar } from "notistack";
@@ -63,6 +64,9 @@ const Thread = () => {
   const { user } = useContext(AuthContext);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
+  const colorMode = isLight ? 'primary' : 'info';
 
   const fetchThreads = useCallback(async () => {
     setIsLoading(true);
@@ -180,7 +184,7 @@ const Thread = () => {
             </Typography>
             <Button
               variant="contained"
-              color="primary"
+              color={colorMode}
               onClick={handleOpenDialog}
               startIcon={<Add />}
               sx={{ mt: 1, mb: 2 }}
@@ -201,6 +205,7 @@ const Thread = () => {
               onThreadClick={handleThreadClick}
               onThreadEdit={handleThreadEdit}
               onThreadDelete={handleThreadDelete}
+              colorMode={colorMode}
             />
           )}
           <NewThreadDialog
@@ -209,6 +214,7 @@ const Thread = () => {
             users={users}
             currentUser={user}
             onSave={handleAddNewThread}
+            colorMode={colorMode}
           />
         </Box>
       </Container>

@@ -10,6 +10,7 @@ import {
   Container,
   Avatar,
   keyframes,
+  useTheme,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import { deepOrange } from "@mui/material/colors";
@@ -89,6 +90,10 @@ const useTypewriter = (text, speed = 20) => {
   return displayText;
 };
 const CampusBuddyHeader = () => {
+  const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
+  const colorMode = isLight ? 'primary' : 'info';
+
   return (
     <Box
       sx={{
@@ -102,7 +107,10 @@ const CampusBuddyHeader = () => {
       }}
     >
       <Avatar
-        sx={{ bgcolor: deepOrange[500], mr: 2 }}
+        sx={{ 
+          bgcolor: isLight ? theme.palette.primary.main : theme.palette.info.main, 
+          mr: 2 
+        }}
         variant="rounded"
         size="large"
       >
@@ -214,6 +222,9 @@ const CampusBuddy = () => {
 };
 
 const ChatMessage = ({ message }) => {
+  const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
+  const colorMode = isLight ? 'primary' : 'info';
   const isUserMessage = message.sender === "user";
   const justifyContent = isUserMessage ? "flex-end" : "flex-start";
   const typingSpeed = 5;
@@ -233,7 +244,9 @@ const ChatMessage = ({ message }) => {
       <Paper
         sx={{
           p: 2,
-          bgcolor: isUserMessage ? "primary.main" : "grey.200",
+          bgcolor: isUserMessage 
+            ? isLight ? theme.palette.primary.main : theme.palette.info.main
+            : "grey.200",
           color: isUserMessage ? "common.white" : "common.black",
           borderRadius: "10px",
           maxWidth: "fit-content",
@@ -246,12 +259,18 @@ const ChatMessage = ({ message }) => {
             <PersonIcon />
           </Avatar>
         ) : (
-          <Avatar sx={{ mr: 1 }} style={{ backgroundColor: deepOrange[500] }}>
+          <Avatar 
+            sx={{ mr: 1 }} 
+            style={{ 
+              backgroundColor: isLight ? theme.palette.primary.main : theme.palette.info.main
+            }}
+          >
             <AssistantIcon />
           </Avatar>
         )}
-
-        <Typography>{isUserMessage ? message.body : typewriterText}</Typography>
+        <Typography>
+          {message.sender === "ai" ? typewriterText : message.body}
+        </Typography>
       </Paper>
     </Box>
   );

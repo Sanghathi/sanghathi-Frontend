@@ -32,7 +32,8 @@ import {
 } from "@mui/icons-material";
 import { blueGrey } from "@mui/material/colors";
 import { alpha } from "@mui/material/styles";
-
+import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
+import HdrStrongIcon from '@mui/icons-material/HdrStrong';
 import { Link } from "react-router-dom";
 
 const StudentTile = ({ title, icon, link }) => {

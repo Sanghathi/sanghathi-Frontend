@@ -27,6 +27,7 @@ import {
   MenuItem,
   Divider,
   useTheme,
+  Tooltip,
 } from "@mui/material";
 import { AuthContext } from "../../context/AuthContext";
 import useSettings from "../../hooks/useSettings";
@@ -36,28 +37,18 @@ const DashboardHeader = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const isLight = theme.palette.mode === 'light';
   const { onToggleMode } = useSettings();
   const navigate = useNavigate();
-  const [anchorEl, setAnchorEl] = useState(null);
 
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleThemeChange = (mode) => {
-    onToggleMode.toggleThemeMode(mode);
-    handleClose();
+  const toggleThemeMode = () => {
+    onToggleMode.toggleThemeMode();
   };
 
   return (
     <AppBar
       position="static"
       sx={{
-        background: isLight ? theme.palette.background.paper : "none",
-        boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
-        borderBottom: isLight ? `1px solid ${theme.palette.divider}` : "none",
+        background: theme.palette.background.paper,
+        boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.1)" : "0 1px 3px rgba(0,0,0,0.2)",
+        borderBottom: `1px solid ${theme.palette.divider}`,
       }}
     >
       <Toolbar sx={{ justifyContent: "space-between" }}>
@@ -65,7 +56,7 @@ const DashboardHeader = ({ isSidebarOpen, setIsSidebarOpen }) => {
         <FlexBetween gap="1.5rem">
           <IconButton 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            sx={{ color: isLight ? theme.palette.text.primary : "inherit" }}
+            sx={{ color: theme.palette.text.primary }}
           >
             <MenuIcon />
           </IconButton>
@@ -80,45 +71,20 @@ const DashboardHeader = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
         {/* RIGHT SIDE */}
         <FlexBetween gap="1rem">
-          <IconButton 
-            onClick={handleClick}
-            sx={{ color: isLight ? theme.palette.text.primary : "inherit" }}
-          >
-            {theme.palette.mode === "dark" ? (
-              <DarkModeOutlined />
-            ) : (
-              <LightModeOutlined />
-            )}
-          </IconButton>
+          <Tooltip title={isLight ? "Switch to Dark Mode" : "Switch to Light Mode"}>
+            <IconButton 
+              onClick={toggleThemeMode}
+              sx={{ color: theme.palette.text.primary }}
+            >
+              {theme.palette.mode === "dark" ? (
+                <DarkModeOutlined />
+              ) : (
+                <LightModeOutlined />
+              )}
+            </IconButton>
+          </Tooltip>
 
           <NotificationsPopover />
-
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleClose}
-            sx={{
-              "& .MuiMenuItem-root": {
-                "&:hover": {
-                  backgroundColor: theme.palette.action.hover,
-                },
-              },
-            }}
-          >
-            <MenuItem onClick={() => handleThemeChange("light")}>
-              <LightModeOutlined sx={{ marginRight: "16px", color: isLight ? theme.palette.primary.main : theme.palette.info.main }} />
-              Light Mode
-            </MenuItem>
-            <MenuItem onClick={() => handleThemeChange("dark")}>
-              <DarkModeOutlined sx={{ marginRight: "16px", color: isLight ? theme.palette.primary.main : theme.palette.info.main }} />
-              Dark Mode
-            </MenuItem>
-            <MenuItem onClick={() => handleThemeChange("system")}>
-              <SettingsOutlined sx={{ marginRight: "16px", color: isLight ? theme.palette.primary.main : theme.palette.info.main }} />
-              System
-            </MenuItem>
-          </Menu>
-
           <AccountPopover />
         </FlexBetween>
       </Toolbar>
