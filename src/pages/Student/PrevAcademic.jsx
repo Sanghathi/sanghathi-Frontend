@@ -1,54 +1,56 @@
-import React from "react";
-import * as Yup from "yup";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import { useSnackbar } from "notistack";
-import { useCallback } from "react";
-// form
 import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-// @mui
-import { Box, Grid, Card, Stack, Typography } from "@mui/material";
+import { useSearchParams } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
+import api from "../../utils/axios";
+import { Box, Grid, Card, Stack, Typography, Divider, FormControl, FormLabel, FormGroup, FormControlLabel, Checkbox } from "@mui/material";
 import { LoadingButton } from "@mui/lab";
-import Divider from "@mui/material/Divider";
-import Checkbox from "@mui/material/Checkbox";
-import FormGroup from "@mui/material/FormGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
-// utils
-import { fData } from "../../utils/formatNumber";
-
-// components
 import {
   FormProvider,
-  RHFSwitch,
   RHFSelect,
   RHFTextField,
-  RHFUploadAvatar,
 } from "../../components/hook-form";
+
+const DEFAULT_VALUES = {
+  sslc: {
+    school: "",
+    percentage: "",
+    board: "",
+    yearOfPassing: "",
+    schoolAddress: ""
+  },
+  puc: {
+    school: "",
+    percentage: "",
+    board: "",
+    yearOfPassing: "",
+    subjects: [],
+    schoolAddress: ""
+  },
+  diploma: {
+    college: "",
+    branch: "",
+    percentage: "",
+    board: "",
+    yearOfPassing: "",
+    collegeAddress: ""
+  }
+};
+
+const BOARDS = ["CBSE", "ICSE", "State Board", "Others"];
+const PUC_SUBJECTS = ["Physics", "Chemistry", "Mathematics", "Biology"];
+
 export default function PrevAcademic() {
   const { enqueueSnackbar } = useSnackbar();
-
-  const UpdateUserSchema = Yup.object().shape({
-    displayName: Yup.string().required("Name is required"),
-  });
-
-  const defaultValues = {
-    displayName: "",
-    email: "",
-    photoURL: "",
-    phoneNumber: "",
-    country: "",
-    address: "",
-    state: "",
-    city: "",
-    zipCode: "",
-    about: "",
-    isPublic: false || false,
-  };
+  const { user } = useContext(AuthContext);
+  const [searchParams] = useSearchParams();
+  const menteeId = searchParams.get('menteeId');
+  const [isDataFetched, setIsDataFetched] = useState(false);
+  const [selectedSubjects, setSelectedSubjects] = useState([]);
 
   const methods = useForm({
-    resolver: yupResolver(UpdateUserSchema),
-    defaultValues,
+    defaultValues: DEFAULT_VALUES,
   });
 
   const {
@@ -57,32 +59,100 @@ export default function PrevAcademic() {
     formState: { isSubmitting },
   } = methods;
 
-  const onSubmit = async () => {
-    try {
-      console.log(methods.getValues());
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      enqueueSnackbar("Update success!");
-    } catch (error) {
-      console.error(error);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const userId = menteeId || user?._id;
+        if (!userId) {
+          console.error('No userId available for fetching data');
+          return;
+        }
+        
+        const response = await api.get(`/v1/academics/${userId}`);
+        console.log("Academic details response:", response.data);
+        
+        const academicData = response.data.data?.academicDetails || response.data;
+        
+        if (academicData) {
+          // Handle SSLC data
+          if (academicData.sslc) {
+            Object.keys(DEFAULT_VALUES.sslc).forEach(key => {
+              setValue(`sslc.${key}`, academicData.sslc[key] || "");
+            });
+          }
+          
+          // Handle PUC data
+          if (academicData.puc) {
+            Object.keys(DEFAULT_VALUES.puc).forEach(key => {
+              if (key !== 'subjects') {
+                setValue(`puc.${key}`, academicData.puc[key] || "");
+              }
+            });
+            
+            // Set selected subjects
+            if (academicData.puc.subjects && Array.isArray(academicData.puc.subjects)) {
+              setSelectedSubjects(academicData.puc.subjects);
+            }
+          }
+          
+          // Handle Diploma data
+          if (academicData.diploma) {
+            Object.keys(DEFAULT_VALUES.diploma).forEach(key => {
+              setValue(`diploma.${key}`, academicData.diploma[key] || "");
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching academic details:", error);
+        if (error.response?.status !== 404) {
+          enqueueSnackbar("Failed to load academic details", { variant: "error" });
+        }
+      } finally {
+        setIsDataFetched(true);
+      }
+    };
+    
+    fetchData();
+  }, [menteeId, user, setValue, enqueueSnackbar]);
+
+  const handleSubjectChange = (subject, checked) => {
+    if (checked) {
+      setSelectedSubjects(prev => [...prev, subject]);
+    } else {
+      setSelectedSubjects(prev => prev.filter(item => item !== subject));
     }
   };
 
-  const handleDrop = useCallback(
-    (acceptedFiles) => {
-      const file = acceptedFiles[0];
-
-      if (file) {
-        setValue(
-          "photoURL",
-          Object.assign(file, {
-            preview: URL.createObjectURL(file),
-          })
-        );
+  const onSubmit = async (data) => {
+    try {
+      const userId = menteeId || user?._id;
+      if (!userId) {
+        enqueueSnackbar("User ID is required", { variant: "error" });
+        return;
       }
-    },
-    [setValue]
-  );
-  const Board = ["CBSE", "ICSE", "State Board", "Others"];
+      
+      // Add the selected subjects to the data
+      const formData = {
+        ...data,
+        puc: {
+          ...data.puc,
+          subjects: selectedSubjects
+        },
+        userId
+      };
+      
+      console.log("Submitting academic data:", formData);
+      
+      const response = await api.post("/v1/academics", formData);
+      console.log("Academic data response:", response.data);
+      
+      enqueueSnackbar("Academic details saved successfully!", { variant: "success" });
+    } catch (error) {
+      console.error("Error saving academic details:", error);
+      const errorMessage = error.response?.data?.message || error.message || "An error occurred while saving academic details";
+      enqueueSnackbar(errorMessage, { variant: "error" });
+    }
+  };
 
   return (
     <div>
@@ -90,8 +160,10 @@ export default function PrevAcademic() {
         <Grid container spacing={3}>
           <Grid item xs={12} md={12}>
             <Card sx={{ p: 3 }}>
-              <h3>SSLC / Class X</h3>
+              <Typography variant="h5" gutterBottom>Academic Background</Typography>
+              <Divider sx={{ mb: 3 }} />
 
+              <Typography variant="h6">SSLC / Class X</Typography>
               <Divider sx={{ mb: 3 }} />
               <Box
                 sx={{
@@ -104,21 +176,21 @@ export default function PrevAcademic() {
                   },
                 }}
               >
-                <RHFTextField name="School" label="School" />
-                <RHFTextField name="GPA/ %" label="GPA/ % " />
-                <RHFSelect name="Board" label="Board" placeholder="Board">
+                <RHFTextField name="sslc.school" label="School" />
+                <RHFTextField name="sslc.percentage" label="GPA/ % " />
+                <RHFSelect name="sslc.board" label="Board">
                   <option value="" />
-                  {Board.map((option) => (
+                  {BOARDS.map((option) => (
                     <option key={option} value={option}>
                       {option}
                     </option>
                   ))}
                 </RHFSelect>
-                <RHFTextField name="Year of Passing" label="Year of Passing" />
-                <RHFTextField name="SchoolAddress" label="SchoolAddress" />
+                <RHFTextField name="sslc.yearOfPassing" label="Year of Passing" />
+                <RHFTextField name="sslc.schoolAddress" label="School Address" />
               </Box>
-              <h3>PUC / Class XII</h3>
 
+              <Typography variant="h6" sx={{ mt: 4 }}>PUC / Class XII</Typography>
               <Divider sx={{ mb: 3 }} />
               <Box
                 sx={{
@@ -131,53 +203,42 @@ export default function PrevAcademic() {
                   },
                 }}
               >
-                <RHFTextField name="School" label="School" />
-                <RHFTextField name="GPA/ %" label="GPA/ % " />
-                <RHFSelect name="Board" label="Board" placeholder="Board">
+                <RHFTextField name="puc.school" label="School" />
+                <RHFTextField name="puc.percentage" label="GPA/ % " />
+                <RHFSelect name="puc.board" label="Board">
                   <option value="" />
-                  {Board.map((option) => (
+                  {BOARDS.map((option) => (
                     <option key={option} value={option}>
                       {option}
                     </option>
                   ))}
                 </RHFSelect>
-                <RHFTextField name="Year of Passing" label="Year of Passing" />
+                <RHFTextField name="puc.yearOfPassing" label="Year of Passing" />
 
-                <FormControl component="fieldset">
+                <FormControl component="fieldset" sx={{ gridColumn: "span 2" }}>
                   <FormLabel component="legend">Subjects</FormLabel>
                   <FormGroup aria-label="position" row>
-                    <FormControlLabel
-                      value="Physics"
-                      control={<Checkbox />}
-                      label="Physics"
-                      labelPlacement="start"
-                    />
-                    <FormControlLabel
-                      value="Chemistry"
-                      control={<Checkbox />}
-                      label="Chemistry"
-                      labelPlacement="start"
-                    />
-                    <FormControlLabel
-                      value="Mathematics"
-                      control={<Checkbox />}
-                      label="Mathematics"
-                      labelPlacement="start"
-                    />
-                    <FormControlLabel
-                      value="Biology"
-                      control={<Checkbox />}
-                      label="Biology"
-                      labelPlacement="start"
-                    />
+                    {PUC_SUBJECTS.map(subject => (
+                      <FormControlLabel
+                        key={subject}
+                        value={subject}
+                        control={
+                          <Checkbox
+                            checked={selectedSubjects.includes(subject)}
+                            onChange={(e) => handleSubjectChange(subject, e.target.checked)}
+                          />
+                        }
+                        label={subject}
+                        labelPlacement="end"
+                      />
+                    ))}
                   </FormGroup>
                 </FormControl>
 
-                <RHFTextField name="SchoolAddress" label="SchoolAddress" />
+                <RHFTextField name="puc.schoolAddress" label="School Address" />
               </Box>
-              <Divider sx={{ mt: 3 }} />
-              <h3>Lateral Entry/Diploma</h3>
 
+              <Typography variant="h6" sx={{ mt: 4 }}>Lateral Entry/Diploma</Typography>
               <Divider sx={{ mb: 3 }} />
               <Box
                 sx={{
@@ -190,21 +251,19 @@ export default function PrevAcademic() {
                   },
                 }}
               >
-                <RHFTextField name="College" label="College" />
-                <RHFTextField name="Branch" label="Branch" />
-
-                <RHFTextField name="GPA/ %" label="GPA/ % " />
-                <RHFSelect name="Board" label="Board" placeholder="Board">
+                <RHFTextField name="diploma.college" label="College" />
+                <RHFTextField name="diploma.branch" label="Branch" />
+                <RHFTextField name="diploma.percentage" label="GPA/ % " />
+                <RHFSelect name="diploma.board" label="Board">
                   <option value="" />
-                  {Board.map((option) => (
+                  {BOARDS.map((option) => (
                     <option key={option} value={option}>
                       {option}
                     </option>
                   ))}
                 </RHFSelect>
-                <RHFTextField name="Year of Passing" label="Year of Passing" />
-
-                <RHFTextField name="CollegeAddress" label="CollegeAddress" />
+                <RHFTextField name="diploma.yearOfPassing" label="Year of Passing" />
+                <RHFTextField name="diploma.collegeAddress" label="College Address" />
               </Box>
 
               <Stack spacing={3} alignItems="flex-end" sx={{ mt: 3 }}>

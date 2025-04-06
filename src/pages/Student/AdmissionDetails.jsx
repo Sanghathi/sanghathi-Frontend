@@ -1,98 +1,110 @@
-import React from "react";
-import * as Yup from "yup";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import { useSnackbar } from "notistack";
-import { useCallback } from "react";
-// form
+import { useSearchParams } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
+import api from "../../utils/axios";
 import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-// @mui
-import { Box, Grid, Card, Stack, Typography } from "@mui/material";
+import { 
+  Box, Grid, Card, Stack, Typography, FormControl, FormLabel,
+  FormGroup, FormControlLabel, Checkbox, Divider 
+} from "@mui/material";
 import { LoadingButton } from "@mui/lab";
-import Divider from "@mui/material/Divider";
-import Checkbox from "@mui/material/Checkbox";
-import FormGroup from "@mui/material/FormGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
-// utils
+import { FormProvider, RHFTextField, RHFSelect } from "../../components/hook-form";
 
-// components
-import {
-  FormProvider,
-  RHFSwitch,
-  RHFSelect,
-  RHFTextField,
-  RHFUploadAvatar,
-} from "../../components/hook-form";
+const DEFAULT_VALUES = {
+  admissionYear: "",
+  branch: "",
+  semester: "",
+  admissionType: "",
+  category: "",
+  usn: "",
+  collegeId: "",
+  branchChange: {
+    year: "",
+    branch: "",
+    usn: "",
+    collegeId: ""
+  },
+  documentsSubmitted: []
+};
 
 export default function AdmissionDetails() {
   const { enqueueSnackbar } = useSnackbar();
-  const UpdateUserSchema = Yup.object().shape({
-    displayName: Yup.string().required("Name is required"),
-  });
-
-  const defaultValues = {
-    displayName: "",
-    email: "",
-    photoURL: "",
-    phoneNumber: "",
-    country: "",
-    address: "",
-    state: "",
-    city: "",
-    zipCode: "",
-    about: "",
-    isPublic: false || false,
-  };
+  const { user } = useContext(AuthContext);
+  const [searchParams] = useSearchParams();
+  const menteeId = searchParams.get('menteeId');
+  const [isDataFetched, setIsDataFetched] = useState(false);
 
   const methods = useForm({
-    resolver: yupResolver(UpdateUserSchema),
-    defaultValues,
+    defaultValues: DEFAULT_VALUES
   });
 
-  const {
-    setValue,
-    handleSubmit,
-    formState: { isSubmitting },
-  } = methods;
+  const { handleSubmit, reset, setValue, watch, formState: { isSubmitting } } = methods;
+  const documentsSubmitted = watch("documentsSubmitted");
 
-  const onSubmit = async () => {
+  const fetchAdmissionDetails = useCallback(async () => {
     try {
-      console.log(methods.getValues());
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      enqueueSnackbar("Update success!");
+      const userId = menteeId || user?._id;
+      if (!userId) return;
+
+      const admissionResponse = await api.get(`/v1/admissions/${userId}`);
+      const admissionData = admissionResponse.data.data?.admissionDetails;
+
+      if (admissionData) {
+        Object.keys(DEFAULT_VALUES).forEach(key => {
+          if (typeof admissionData[key] === "object" && admissionData[key] !== null) {
+            Object.keys(admissionData[key]).forEach(subKey => {
+              setValue(`${key}.${subKey}`, admissionData[key][subKey] || "");
+            });
+          } else {
+            setValue(key, admissionData[key] || "");
+          }
+        });
+      }
     } catch (error) {
-      console.error(error);
+      if (error.response?.status !== 404) {
+        enqueueSnackbar("Error fetching admission details", { variant: "error" });
+      }
+    } finally {
+      setIsDataFetched(true);
+    }
+  }, [menteeId, user?._id, setValue, enqueueSnackbar]);
+
+  useEffect(() => {
+    fetchAdmissionDetails();
+  }, [fetchAdmissionDetails]);
+
+  const onSubmit = async (data) => {
+    try {
+      const payload = {
+        ...data,
+        userId: menteeId || user?._id, 
+      };
+  
+      const response = await api.post('/v1/admissions', payload);
+      enqueueSnackbar('Admission details saved successfully!', { variant: 'success' });
+    } catch (error) {
+      console.error('Error saving admission details:', error);
+      enqueueSnackbar('Failed to save admission details.', { variant: 'error' });
     }
   };
 
-  const handleDrop = useCallback(
-    (acceptedFiles) => {
-      const file = acceptedFiles[0];
-
-      if (file) {
-        setValue(
-          "photoURL",
-          Object.assign(file, {
-            preview: URL.createObjectURL(file),
-          })
-        );
-      }
-    },
-    [setValue]
-  );
-  const Type = ["COMEDK", "CET", "MANAGEMENT", "SNQ"];
-  const Semester = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th"];
+  const documentsList = [
+    "SSLC/X Marks Card",
+    "PUC/XII Marks Card",
+    "Caste Certificate",
+    "Migration Certificate",
+  ];
 
   return (
     <div>
       <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
         <Grid container spacing={2}>
-          <Grid item xs={12} md={12}>
+          <Grid item xs={12}>
             <Card sx={{ p: 3 }}>
-              <h3>Admission Details at CMRIT</h3>
-
+              <Typography variant="h5" gutterBottom>Admission Details</Typography>
               <Divider sx={{ mb: 3 }} />
+
               <Box
                 sx={{
                   display: "grid",
@@ -104,41 +116,36 @@ export default function AdmissionDetails() {
                   },
                 }}
               >
-                <RHFTextField name="Admission Year" label="Admission Year" />
-                <RHFTextField name="Branch" label="Branch " />
-                <RHFSelect name="Semester" label="Semester" placeholder="Board">
+                <RHFTextField name="admissionYear" label="Admission Year" />
+                <RHFTextField name="branch" label="Branch" />
+                <RHFSelect name="semester" label="Semester">
                   <option value="" />
-                  {Semester.map((option) => (
+                  {["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th"].map(
+                    (option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    )
+                  )}
+                </RHFSelect>
+                <RHFSelect name="admissionType" label="Type of Admission">
+                  <option value="" />
+                  {["COMEDK", "CET", "MANAGEMENT", "SNQ"].map((option) => (
                     <option key={option} value={option}>
                       {option}
                     </option>
                   ))}
                 </RHFSelect>
-                <RHFSelect
-                  name="Type of admission"
-                  label="Type of admission"
-                  placeholder="Board"
-                >
-                  <option value="" />
-                  {Type.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </RHFSelect>
-                <RHFTextField name="Category" label="Category" />
-                <RHFTextField
-                  name="USN(University Seat Number)"
-                  label="USN(University Seat Number)"
-                />
-                <RHFTextField
-                  name="College ID Number"
-                  label="College ID Number"
-                />
+                <RHFTextField name="category" label="Category" />
+                <RHFTextField name="usn" label="USN (University Seat Number)" />
+                <RHFTextField name="collegeId" label="College ID Number" />
               </Box>
-              <h3>Change of Branch (if applicable)</h3>
 
+              <Typography variant="h6" sx={{ mt: 3 }}>
+                Change of Branch (if applicable)
+              </Typography>
               <Divider sx={{ mb: 3 }} />
+
               <Box
                 sx={{
                   display: "grid",
@@ -150,64 +157,41 @@ export default function AdmissionDetails() {
                   },
                 }}
               >
-                <RHFTextField name="Year of Change" label="Year of Change" />
-                <RHFTextField name="Branch" label="Branch " />
-
-                <RHFTextField
-                  name="USN(University Seat Number)"
-                  label="USN(University Seat Number)"
-                />
-                <RHFTextField
-                  name="College ID Number"
-                  label="College ID Number"
-                />
+                <RHFTextField name="branchChange.year" label="Year of Change" />
+                <RHFTextField name="branchChange.branch" label="New Branch" />
+                <RHFTextField name="branchChange.usn" label="New USN" />
+                <RHFTextField name="branchChange.collegeId" label="New College ID" />
               </Box>
 
+              <Typography variant="h6" sx={{ mt: 3 }}>
+                Documents Submitted
+              </Typography>
               <Divider sx={{ mb: 3 }} />
-              <Box
-                sx={{
-                  display: "grid",
-                  rowGap: 3,
-                  columnGap: 2,
-                }}
-              >
-                <FormControl component="fieldset">
-                  <FormLabel component="legend">Documents Submitted</FormLabel>
-                  <FormGroup aria-label="position" row>
+              <FormControl component="fieldset">
+                <FormGroup>
+                  {documentsList.map((doc) => (
                     <FormControlLabel
-                      value="SSLC/ X Marks Card"
-                      control={<Checkbox />}
-                      label="SSLC/ X Marks Card"
-                      labelPlacement="end"
+                      key={doc}
+                      control={
+                        <Checkbox
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setValue("documentsSubmitted", (prev) =>
+                              checked
+                                ? [...prev, doc]
+                                : prev.filter((item) => item !== doc)
+                            );
+                          }}
+                        />
+                      }
+                      label={doc}
                     />
-                    <FormControlLabel
-                      value="PUC/ XII Marks Card"
-                      control={<Checkbox />}
-                      label="PUC/ XII Marks Card"
-                      labelPlacement="end"
-                    />
-                    <FormControlLabel
-                      value="Caste Certificate"
-                      control={<Checkbox />}
-                      label="Caste Certificate"
-                      labelPlacement="end"
-                    />
-                    <FormControlLabel
-                      value="Migration Certificate"
-                      control={<Checkbox />}
-                      label="Migration Certificate"
-                      labelPlacement="end"
-                    />
-                  </FormGroup>
-                </FormControl>
-              </Box>
+                  ))}
+                </FormGroup>
+              </FormControl>
 
               <Stack spacing={3} alignItems="flex-end" sx={{ mt: 3 }}>
-                <LoadingButton
-                  type="submit"
-                  variant="contained"
-                  loading={isSubmitting}
-                >
+                <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
                   Save Changes
                 </LoadingButton>
               </Stack>

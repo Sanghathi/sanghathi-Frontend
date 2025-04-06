@@ -1,199 +1,178 @@
-import React from 'react'
-import { useState } from "react";
+import React, { useEffect, useState, useContext, useCallback } from "react";
 import { useSnackbar } from "notistack";
-import { useCallback } from "react";
-
+import { useForm } from "react-hook-form";
+import { Box, Grid, Card, Stack, Typography, Divider } from "@mui/material";
+import { LoadingButton } from "@mui/lab";
+import { FormProvider, RHFTextField } from "../../components/hook-form";
+import { AuthContext } from "../../context/AuthContext";
+import { useSearchParams } from "react-router-dom";
 import api from "../../utils/axios";
 
-// form
-import { useForm } from "react-hook-form";
-
-// @mui
-import { Box, Grid, Card, Stack } from "@mui/material";
-import { LoadingButton } from "@mui/lab";
-
-// components
-import {
-FormProvider,
-RHFTextField,
-RHFSelect,
-RHFUploadAvatar,
-RHFCheckbox,
-} from "../../components/hook-form";
-
 const DEFAULT_VALUES = {
-firstName: "",
-middleName: "",
-lastName: "",
-email: "",
-relationWithGuardian: "",
-mobileNumber: "",
-phoneNumber: "",
-residenceAddress: "",
-taluka: "",
-village: "",
-pincode: "",
+  firstName: "",
+  middleName: "",
+  lastName: "",
+  email: "",
+  relationWithGuardian: "",
+  mobileNumber: "",
+  phoneNumber: "",
+  residenceAddress: "",
+  taluka: "",
+  district: "",
+  state: "",
+  pincode: "",
 };
 
-
-
 export default function LocalGuardianForm() {
-    const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useSnackbar();
+  const { user } = useContext(AuthContext);
+  const [searchParams] = useSearchParams();
+  const menteeId = searchParams.get('menteeId');
+  const [isDataFetched, setIsDataFetched] = useState(false);
 
-    const methods = useForm({
+  const methods = useForm({
     defaultValues: DEFAULT_VALUES,
-    });
-    
-    const {
-    handleSubmit,
-    reset,
-    formState: { isSubmitting },
-    } = methods;
-    
-    const handleFillMockData = () => {
-    reset(DEFAULT_VALUES);
+  });
+
+  const { handleSubmit, reset, setValue, formState: { isSubmitting } } = methods;
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const userId = menteeId || user?._id;
+        if (!userId) {
+          console.error('No userId available for fetching data');
+          return;
+        }
+        
+        console.log('Fetching guardian details for userId:', userId);
+        const response = await api.get(`/v1/local-guardians/${userId}`);
+        console.log("Guardian details full response:", response);
+        console.log("Guardian details response.data:", response.data);
+        
+        // Try multiple possible response structures
+        let guardianData = null;
+        
+        if (response.data?.data?.localGuardian) {
+          guardianData = response.data.data.localGuardian;
+          console.log("Found data in response.data.data.localGuardian");
+        } else if (response.data?.localGuardian) {
+          guardianData = response.data.localGuardian;
+          console.log("Found data in response.data.localGuardian");
+        } else if (response.data?.data) {
+          guardianData = response.data.data;
+          console.log("Found data in response.data.data");
+        } else {
+          guardianData = response.data;
+          console.log("Using data directly from response.data");
+        }
+        
+        console.log("Extracted guardian data:", guardianData);
+        
+        if (guardianData) {
+          // Go through all expected fields in our form
+          Object.keys(DEFAULT_VALUES).forEach(key => {
+            if (guardianData[key] !== undefined) {
+              console.log(`Setting field ${key} to value: ${guardianData[key]}`);
+              setValue(key, guardianData[key] || "");
+            }
+          });
+          
+          // If guardianData matches our form structure, use reset for complete update
+          if (typeof guardianData === 'object' && 
+              Object.keys(guardianData).length > 0 && 
+              Object.keys(guardianData).every(key => DEFAULT_VALUES.hasOwnProperty(key) || 
+                                              ['_id', 'id', '_v', '__v', 'createdAt', 'updatedAt', 'userId'].includes(key))) {
+            console.log("Setting all form values at once with reset()");
+            // Filter out non-form fields
+            const formData = {};
+            Object.keys(DEFAULT_VALUES).forEach(key => {
+              formData[key] = guardianData[key] || "";
+            });
+            reset(formData);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching guardian data:", error);
+        // Don't show error for 'not found' responses - expected for new users
+        if (error.response?.status !== 404 && 
+            !error.message?.includes('not found') && 
+            !error.response?.data?.message?.includes('not found')) {
+          enqueueSnackbar("Failed to fetch guardian data", { variant: "error" });
+        }
+      } finally {
+        setIsDataFetched(true);
+      }
     };
     
-    const handleReset = () => {
-    reset();
-    };
-    
-    const onSubmit = useCallback(async (formData) => {
+    fetchData();
+  }, [menteeId, user, reset, setValue, enqueueSnackbar]);
+
+  const onSubmit = async (formData) => {
     try {
-    await api.post("/api/my-form-endpoint", formData);
-    enqueueSnackbar("Form submitted successfully!", {
-    variant: "success",
-    });
-    reset(DEFAULT_VALUES);
+      const userId = menteeId || user?._id;
+      if (!userId) {
+        enqueueSnackbar("User ID is required", { variant: "error" });
+        return;
+      }
+      
+      const payload = {
+        ...formData,
+        userId
+      };
+      
+      console.log("Submitting guardian data:", payload);
+      const response = await api.post("/v1/local-guardians", payload);
+      console.log("Guardian data response:", response.data);
+      
+      enqueueSnackbar("Guardian details saved successfully!", { variant: "success" });
     } catch (error) {
-    console.error(error);
-    enqueueSnackbar("An error occurred while processing the request", {
-    variant: "error",
-    });
+      console.error("Error submitting guardian data:", error);
+      const errorMessage = error.response?.data?.message || error.message || "An error occurred while saving guardian details";
+      enqueueSnackbar(errorMessage, { variant: "error" });
     }
-    }, []);
-
-
+  };
 
   return (
-    <div>
-      
-      <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
+    <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
       <Card sx={{ p: 3 }}>
-<Grid container spacing={2}>
+        <Typography variant="h5" gutterBottom>Local Guardian Details</Typography>
+        <Divider sx={{ mb: 3 }} />
+        
+        {!isDataFetched ? (
+          <Box sx={{ textAlign: 'center', py: 3 }}>
+            <Typography>Loading guardian details...</Typography>
+          </Box>
+        ) : (
+          <>
+            
+            <Grid container spacing={2}>
+              {Object.keys(DEFAULT_VALUES).map((field) => (
+                <Grid item xs={12} md={field === "residenceAddress" ? 12 : 4} key={field}>
+                  <RHFTextField 
+                    name={field} 
+                    label={field.replace(/([A-Z])/g, " $1").trim()} 
+                    fullWidth 
+                    multiline={field === "residenceAddress"} 
+                    rows={field === "residenceAddress" ? 4 : 1} 
+                  />
+                </Grid>
+              ))}
+            </Grid>
 
-
-<Grid item xs={12}>
-
-<RHFTextField
-         name="firstName"
-         label="First Name"
-         fullWidth
-         autoComplete="given-name"
-       />
-</Grid>
-<Grid item xs={12}>
-<RHFTextField
-         name="middleName"
-         label="Middle Name"
-         fullWidth
-         autoComplete="additional-name"
-       />
-</Grid>
-<Grid item xs={12}>
-<RHFTextField
-         name="lastName"
-         label="Last Name"
-         fullWidth
-         autoComplete="family-name"
-       />
-</Grid>
-<Grid item xs={12}>
-<RHFTextField
-         name="email"
-         label="Email"
-         type="email"
-         fullWidth
-         autoComplete="email"
-       />
-</Grid>
-<Grid item xs={12}>
-<RHFTextField
-         name="relationWithGuardian"
-         label="Relation with Guardian"
-         fullWidth
-       />
-</Grid>
-<Grid item xs={12} md={6}>
-<RHFTextField
-         name="mobileNumber"
-         label="Mobile Number"
-         type="tel"
-         fullWidth
-       />
-</Grid>
-<Grid item xs={12} md={6}>
-<RHFTextField
-         name="phoneNumber"
-         label="Phone Number"
-         type="tel"
-         fullWidth
-       />
-</Grid>
-<Grid item xs={12}>
-<RHFTextField
-         name="residenceAddress"
-         label="Residence Address"
-         multiline
-         fullWidth
-         rows={4}
-       />
-</Grid>
-<Grid item xs={12} md={4}>
-<RHFTextField name="taluka" label="Taluka" fullWidth/>
-</Grid>
-<Grid item xs={12} md={4}>
-  <RHFTextField name="district" label="District" fullWidth/>
-</Grid>
-<Grid item xs={12} md={4}>
-  <RHFTextField name="state" label="State" fullWidth/>
-</Grid>
-<Grid item xs={12} md={4}>
-  <RHFTextField name="pincode" label="Pincode" fullWidth />
-</Grid>
-
-
-</Grid>
-<Stack spacing={3} alignItems="flex-end" sx={{ mt: 3 }}>
+            <Stack spacing={3} alignItems="flex-end" sx={{ mt: 3 }}>
               <Box display="flex" gap={1}>
-                {import.meta.env.MODE === "development" && (
-                  <LoadingButton
-                    variant="outlined"
-                    onClick={handleFillMockData}
-                  >
-                    Fill Mock Data
-                  </LoadingButton>
-                )}
-                <LoadingButton variant="outlined" onClick={handleReset}>
+                <LoadingButton variant="outlined" onClick={() => reset(DEFAULT_VALUES)} disabled={isSubmitting}>
                   Reset
                 </LoadingButton>
-                <LoadingButton
-                  type="submit"
-                  variant="contained"
-                  loading={isSubmitting}
-                >
+                <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
                   Save
                 </LoadingButton>
               </Box>
             </Stack>
-</Card>
-
-</FormProvider>
-
-
-
-
-
-    </div>
-  )
+          </>
+        )}
+      </Card>
+    </FormProvider>
+  );
 }
