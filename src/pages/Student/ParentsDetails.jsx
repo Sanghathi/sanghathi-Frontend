@@ -2,7 +2,7 @@ import React from "react";
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { useSnackbar } from "notistack";
-import { useCallback } from "react";
+import { useForm } from "react-hook-form";
 import api from "../../utils/axios";
 import { useSearchParams } from "react-router-dom";
 // form
@@ -12,15 +12,10 @@ import { useForm } from "react-hook-form";
 import { Box, Grid, Card, Stack } from "@mui/material";
 import { LoadingButton } from "@mui/lab";
 
-// components
-import {
-  FormProvider,
-  RHFTextField,
-  RHFSelect,
-  RHFUploadAvatar,
-  RHFCheckbox,
-} from "../../components/hook-form";
+// Custom Form Components
+import { FormProvider, RHFTextField } from "../../components/hook-form";
 
+// Default Form Values
 const DEFAULT_VALUES = {
   fatherFirstName: "",
   fatherMiddleName: "",
@@ -53,6 +48,7 @@ const DEFAULT_VALUES = {
   state: "",
   pincode: "",
 };
+
 export default function ParentsDetails() {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useContext(AuthContext);
@@ -120,17 +116,44 @@ export default function ParentsDetails() {
       enqueueSnackbar("Form submitted successfully!", {
         variant: "success",
       });
-      reset(DEFAULT_VALUES);
+      enqueueSnackbar("Form submitted successfully!", { variant: "success" });
     } catch (error) {
-      console.error(error);
-      enqueueSnackbar("An error occurred while processing the request", {
-        variant: "error",
-      });
+      enqueueSnackbar(
+        error.response?.data?.message || "An error occurred while processing the request",
+        { variant: "error" }
+      );
     }
   }, [menteeId, user, enqueueSnackbar, reset]);
 
   return (
-    <div>
+    <FormProvider methods={methods}>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Grid container spacing={2}>
+          {/* Father's Details */}
+          <Grid item xs={12} md={12}>
+            <Card sx={{ p: 3 }}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <RHFTextField name="fatherFirstName" label="Father's First Name" fullWidth required />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <RHFTextField name="fatherMiddleName" label="Father's Middle Name" fullWidth />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <RHFTextField name="fatherLastName" label="Father's Last Name" fullWidth />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <RHFTextField name="motherFirstName" label="Mother's First Name" fullWidth required />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <RHFTextField name="motherMiddleName" label="Mother's Middle Name" fullWidth />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <RHFTextField name="motherLastName" label="Mother's Last Name" fullWidth />
+                </Grid>
+              </Grid>
+            </Card>
+          </Grid>
 
 <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
       <Grid container spacing={2}>
@@ -287,6 +310,5 @@ export default function ParentsDetails() {
        </Grid>
       </Grid>
     </FormProvider>
-    </div>
   );
 }
