@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext, useCallback } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useSnackbar } from "notistack";
 import { useForm } from "react-hook-form";
 import { Box, Grid, Card, Stack, Typography, Divider } from "@mui/material";
@@ -34,102 +34,56 @@ export default function LocalGuardianForm() {
     defaultValues: DEFAULT_VALUES,
   });
 
-  const { handleSubmit, reset, setValue, formState: { isSubmitting } } = methods;
+  const { handleSubmit, reset, formState: { isSubmitting } } = methods;
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchLocalGuardian = async () => {
       try {
         const userId = menteeId || user?._id;
-        if (!userId) {
-          console.error('No userId available for fetching data');
-          return;
-        }
-        
-        console.log('Fetching guardian details for userId:', userId);
+        if (!userId) return;
+
         const response = await api.get(`/v1/local-guardians/${userId}`);
-        console.log("Guardian details full response:", response);
-        console.log("Guardian details response.data:", response.data);
         
-        // Try multiple possible response structures
-        let guardianData = null;
-        
-        if (response.data?.data?.localGuardian) {
-          guardianData = response.data.data.localGuardian;
-          console.log("Found data in response.data.data.localGuardian");
-        } else if (response.data?.localGuardian) {
-          guardianData = response.data.localGuardian;
-          console.log("Found data in response.data.localGuardian");
-        } else if (response.data?.data) {
-          guardianData = response.data.data;
-          console.log("Found data in response.data.data");
-        } else {
-          guardianData = response.data;
-          console.log("Using data directly from response.data");
-        }
-        
-        console.log("Extracted guardian data:", guardianData);
-        
-        if (guardianData) {
-          // Go through all expected fields in our form
-          Object.keys(DEFAULT_VALUES).forEach(key => {
-            if (guardianData[key] !== undefined) {
-              console.log(`Setting field ${key} to value: ${guardianData[key]}`);
-              setValue(key, guardianData[key] || "");
-            }
-          });
-          
-          // If guardianData matches our form structure, use reset for complete update
-          if (typeof guardianData === 'object' && 
-              Object.keys(guardianData).length > 0 && 
-              Object.keys(guardianData).every(key => DEFAULT_VALUES.hasOwnProperty(key) || 
-                                              ['_id', 'id', '_v', '__v', 'createdAt', 'updatedAt', 'userId'].includes(key))) {
-            console.log("Setting all form values at once with reset()");
-            // Filter out non-form fields
-            const formData = {};
-            Object.keys(DEFAULT_VALUES).forEach(key => {
-              formData[key] = guardianData[key] || "";
-            });
-            reset(formData);
+        // Handle both success cases - with and without data
+        if (response.data.status === 'success') {
+          if (response.data.data?.localGuardian) {
+            // Data exists - populate form
+            reset(response.data.data.localGuardian);
+          } else {
+            // No data found - reset to defaults
+            reset(DEFAULT_VALUES);
           }
         }
       } catch (error) {
-        console.error("Error fetching guardian data:", error);
-        // Don't show error for 'not found' responses - expected for new users
-        if (error.response?.status !== 404 && 
-            !error.message?.includes('not found') && 
-            !error.response?.data?.message?.includes('not found')) {
-          enqueueSnackbar("Failed to fetch guardian data", { variant: "error" });
+        if (error.response?.status === 404) {
+          // 404 is expected for new users without data
+          reset(DEFAULT_VALUES);
+        } else {
+          enqueueSnackbar("Error fetching guardian details", { variant: "error" });
         }
       } finally {
         setIsDataFetched(true);
       }
     };
-    
-    fetchData();
-  }, [menteeId, user, reset, setValue, enqueueSnackbar]);
 
-  const onSubmit = async (formData) => {
+    fetchLocalGuardian();
+  }, [menteeId, user, reset, enqueueSnackbar]);
+
+  const onSubmit = async (data) => {
     try {
       const userId = menteeId || user?._id;
       if (!userId) {
         enqueueSnackbar("User ID is required", { variant: "error" });
         return;
       }
-      
-      const payload = {
-        ...formData,
-        userId
-      };
-      
-      console.log("Submitting guardian data:", payload);
-      const response = await api.post("/v1/local-guardians", payload);
-      console.log("Guardian data response:", response.data);
-      
+
+      await api.post("/v1/local-guardians", { ...data, userId });
       enqueueSnackbar("Guardian details saved successfully!", { variant: "success" });
     } catch (error) {
-      console.error("Error submitting guardian data:", error);
-      const errorMessage = error.response?.data?.message || error.message || "An error occurred while saving guardian details";
-      enqueueSnackbar(errorMessage, { variant: "error" });
+      enqueueSnackbar(
+        error.response?.data?.message || "Error saving guardian details", 
+        { variant: "error" }
+      );
     }
   };
 
@@ -145,13 +99,12 @@ export default function LocalGuardianForm() {
           </Box>
         ) : (
           <>
-            
             <Grid container spacing={2}>
               {Object.keys(DEFAULT_VALUES).map((field) => (
                 <Grid item xs={12} md={field === "residenceAddress" ? 12 : 4} key={field}>
                   <RHFTextField 
                     name={field} 
-                    label={field.replace(/([A-Z])/g, " $1").trim()} 
+                    label={field.split(/(?=[A-Z])/).join(' ')} 
                     fullWidth 
                     multiline={field === "residenceAddress"} 
                     rows={field === "residenceAddress" ? 4 : 1} 
@@ -162,10 +115,18 @@ export default function LocalGuardianForm() {
 
             <Stack spacing={3} alignItems="flex-end" sx={{ mt: 3 }}>
               <Box display="flex" gap={1}>
-                <LoadingButton variant="outlined" onClick={() => reset(DEFAULT_VALUES)} disabled={isSubmitting}>
+                <LoadingButton 
+                  variant="outlined" 
+                  onClick={() => reset(DEFAULT_VALUES)} 
+                  disabled={isSubmitting}
+                >
                   Reset
                 </LoadingButton>
-                <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
+                <LoadingButton 
+                  type="submit" 
+                  variant="contained" 
+                  loading={isSubmitting}
+                >
                   Save
                 </LoadingButton>
               </Box>
