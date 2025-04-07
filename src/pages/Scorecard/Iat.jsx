@@ -14,9 +14,14 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import { AuthContext } from "../../context/AuthContext";
+import { useSearchParams } from "react-router-dom";
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 const Iat = () => {
   const { user } = useContext(AuthContext);
+  const [searchParams] = useSearchParams();
+  const menteeId = searchParams.get('menteeId');
+  
   const [iatData, setIatData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -25,9 +30,25 @@ const Iat = () => {
   useEffect(() => {
     const fetchIatData = async () => {
       try {
+        // Use menteeId from URL params if available, otherwise use logged-in user ID
+        const userId = menteeId || user?._id;
+        
+        if (!userId) {
+          setError("User not authenticated or mentee ID not provided.");
+          setLoading(false);
+          return;
+        }
+        
+        console.log(`Fetching IAT marks for user ID: ${userId} (${menteeId ? 'menteeId from URL' : 'logged-in user'})`);
+        
         //  Adapt the endpoint to your IAT data endpoint
         const response = await axios.get(
-          `${BASE_URL}/students/iat/${user._id}` //  Replace with your actual endpoint
+          `${BASE_URL}/students/iat/${userId}`, //  Replace with your actual endpoint
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`
+            }
+          }
         );
         const data = response.data.data.iat; // Adjust based on your API response structure
 
@@ -49,7 +70,7 @@ const Iat = () => {
     };
 
     fetchIatData();
-  }, [user._id]);
+  }, [user?._id, menteeId]);
 
   const handleSemesterChange = (event) => {
     setSelectedSemester(parseInt(event.target.value, 10));

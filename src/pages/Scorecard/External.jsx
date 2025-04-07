@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useCallback } from "react";
 import {
   Box,
   Table,
@@ -9,47 +9,81 @@ import {
   TableRow,
   Select,
   MenuItem,
-  TextField,
-  Typography, // For headings
+  Typography,
+  Button,
+  CircularProgress,
 } from "@mui/material";
 import axios from "axios";
 import { AuthContext } from "../../context/AuthContext";
+import { useSearchParams } from "react-router-dom";
+const BASE_URL = import.meta.env.VITE_API_URL;
 
-const Iat = () => {
+const External = () => {
   const { user } = useContext(AuthContext);
-  const [iatData, setIatData] = useState([]);
+  const [searchParams] = useSearchParams();
+  const menteeId = searchParams.get('menteeId');
+  
+  const [externalData, setExternalData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedSemester, setSelectedSemester] = useState(null);
+  const [availableSemesters, setAvailableSemesters] = useState([1, 2, 3, 4, 5, 6, 7, 8]);
+
+  // Get token from local storage - using "token" instead of "accessToken"
+  const token = localStorage.getItem("token");
+
+  const fetchExternalData = useCallback(async () => {
+    // Use menteeId from URL params if available, otherwise use logged-in user ID
+    const userId = menteeId || user?._id;
+    
+    if (!userId || !token) {
+      setError("User not authenticated or mentee ID not provided.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      console.log(`Fetching external marks for user ID: ${userId} (${menteeId ? 'menteeId from URL' : 'logged-in user'})`);
+      
+      const response = await axios.get(
+        `${BASE_URL}/students/external/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      
+      console.log("Response data:", response.data);
+      
+      if (response.data && response.data.data && response.data.data.external) {
+        const data = response.data.data.external;
+        if (data.semesters && data.semesters.length > 0) {
+          setExternalData(data.semesters);
+          setSelectedSemester(data.semesters[0].semester);
+        } else {
+          setExternalData([]);
+          setSelectedSemester(1); // Default to first semester
+        }
+      } else {
+        setExternalData([]);
+        setSelectedSemester(1); // Default to first semester
+      }
+
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching external marks:", err);
+      
+      // For any error, including 404, just show an empty table
+      setExternalData([]);
+      setSelectedSemester(1); // Default to first semester
+      setLoading(false);
+    }
+  }, [user, token, menteeId]);
 
   useEffect(() => {
-    const fetchIatData = async () => {
-      try {
-        //  Adapt the endpoint to your IAT data endpoint
-        const response = await axios.get(
-          `${BASE_URL}/students/iat/${user._id}` //  Replace with your actual endpoint
-        );
-        const data = response.data.data.iat; // Adjust based on your API response structure
-
-        if (data && data.semesters) {
-          setIatData(data.semesters);
-          if (data.semesters.length > 0) {
-            setSelectedSemester(data.semesters[0].semester);
-          }
-        } else {
-            setIatData([]);
-        }
-
-        setLoading(false);
-      } catch (err) {
-        setError("Failed to fetch IAT data");
-        setLoading(false);
-        console.error(err); // Log the error for debugging
-      }
-    };
-
-    fetchIatData();
-  }, [user._id]);
+    fetchExternalData();
+  }, [fetchExternalData]);
 
   const handleSemesterChange = (event) => {
     setSelectedSemester(parseInt(event.target.value, 10));
@@ -57,7 +91,7 @@ const Iat = () => {
 
   const getSubjectsForSemester = () => {
     if (!selectedSemester) return [];
-    const semesterData = iatData.find((s) => s.semester === selectedSemester);
+    const semesterData = externalData.find((s) => s.semester === selectedSemester);
     if (!semesterData) return [];
 
     const subjectsMap = new Map();
@@ -67,42 +101,59 @@ const Iat = () => {
     return Array.from(subjectsMap.values());
   };
 
-  //  Get IAT marks for a specific subject and IAT number
-    const getIatMarks = (subjectCode, iatNumber) => {
-        if (!selectedSemester) return "";
-        const semesterData = iatData.find(s => s.semester === selectedSemester);
-        if (!semesterData) return "";
+  // Get the CGPA for the current semester
+  const getSemesterCGPA = () => {
+    if (!selectedSemester) return null;
+    const semesterData = externalData.find((s) => s.semester === selectedSemester);
+    if (!semesterData || !semesterData.subjects || semesterData.subjects.length === 0) return null;
+    
+    // Get CGPA from the first subject that has it (assuming all subjects in a semester have the same CGPA)
+    const subjectWithCGPA = semesterData.subjects.find(subject => subject.cgpa);
+    return subjectWithCGPA ? subjectWithCGPA.cgpa : null;
+  };
 
-        const subject = semesterData.subjects.find(s => s.subjectCode === subjectCode);
-        if (!subject) return "";
+  const handleRefresh = () => {
+    setLoading(true);
+    setError("");
+    fetchExternalData();
+  };
 
-        switch (iatNumber) {
-            case 1: return subject.iat1 || ""; // Handle potential undefined/null
-            case 2: return subject.iat2 || "";
-            case 3: return subject.iat3 || "";
-            default: return "";
-        }
-    };
+  if (loading) {
+    return (
+      <Box sx={{ p: 2, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-
+  if (error) {
+    return (
+      <Box sx={{ p: 2, textAlign: 'center' }}>
+        <Typography color="error" gutterBottom>{error}</Typography>
+        <Button variant="outlined" onClick={handleRefresh} sx={{ mt: 2 }}>
+          Try Again
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="h4" component="h1" gutterBottom align="center">
-        VTU Marks Report
+        External Marks Report
       </Typography>
 
       <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
         <label>
           Select Semester:
           <Select
-            value={selectedSemester}
+            value={selectedSemester || 1}
             onChange={handleSemesterChange}
             sx={{ ml: 1 }}
           >
-            {iatData.map((sem) => (
-              <MenuItem key={sem.semester} value={sem.semester}>
-                Semester {sem.semester}
+            {availableSemesters.map((sem) => (
+              <MenuItem key={sem} value={sem}>
+                Semester {sem}
               </MenuItem>
             ))}
           </Select>
@@ -113,37 +164,79 @@ const Iat = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ border: "1px solid gray" }}>
+              <TableCell sx={{ border: "1px solid gray", fontWeight: "bold" }}>
                 Subject Code
               </TableCell>
-              <TableCell sx={{ border: "1px solid gray" }}>
+              <TableCell sx={{ border: "1px solid gray", fontWeight: "bold" }}>
                 Subject Name
               </TableCell>
-              <TableCell sx={{ border: "1px solid gray" }}>IAT 1</TableCell>
-              <TableCell sx={{ border: "1px solid gray" }}>IAT 2</TableCell>
-              <TableCell sx={{ border: "1px solid gray" }}>IAT 3</TableCell>
+              <TableCell sx={{ border: "1px solid gray", fontWeight: "bold" }}>
+                Marks
+              </TableCell>
+              <TableCell sx={{ border: "1px solid gray", fontWeight: "bold" }}>
+                Attempt
+              </TableCell>
+              <TableCell sx={{ border: "1px solid gray", fontWeight: "bold" }}>
+                Result
+              </TableCell>
+              <TableCell sx={{ border: "1px solid gray", fontWeight: "bold" }}>
+                Passing Date
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {getSubjectsForSemester().map((subject) => (
-              <TableRow key={subject.subjectCode}>
-                <TableCell sx={{ border: "1px solid gray" }}>
-                  {subject.subjectCode}
-                </TableCell>
-                <TableCell sx={{ border: "1px solid gray" }}>
-                  {subject.subjectName}
-                </TableCell>
-                <TableCell sx={{ border: "1px solid gray" }}>
-                    {getIatMarks(subject.subjectCode, 1)}
-                </TableCell>
-                <TableCell sx={{ border: "1px solid gray" }}>
-                    {getIatMarks(subject.subjectCode, 2)}
-                </TableCell>
-                <TableCell sx={{ border: "1px solid gray" }}>
-                    {getIatMarks(subject.subjectCode, 3)}
+            {getSubjectsForSemester().length > 0 ? (
+              getSubjectsForSemester().map((subject) => (
+                <TableRow key={subject.subjectCode}>
+                  <TableCell sx={{ border: "1px solid gray" }}>
+                    {subject.subjectCode}
+                  </TableCell>
+                  <TableCell sx={{ border: "1px solid gray" }}>
+                    {subject.subjectName}
+                  </TableCell>
+                  <TableCell sx={{ border: "1px solid gray" }}>
+                    {subject.externalMarks || "-"}
+                  </TableCell>
+                  <TableCell sx={{ border: "1px solid gray" }}>
+                    {subject.attempt || "1"}
+                  </TableCell>
+                  <TableCell sx={{ 
+                    border: "1px solid gray",
+                    color: subject.result === "PASS" ? "success.main" : "error.main",
+                    fontWeight: "bold" 
+                  }}>
+                    {subject.result || "-"}
+                  </TableCell>
+                  <TableCell sx={{ border: "1px solid gray" }}>
+                    {subject.passingDate || "-"}
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                  No external marks data available for this semester.
                 </TableCell>
               </TableRow>
-            ))}
+            )}
+            
+            {/* CGPA Row - only show if there's data and a CGPA value */}
+            {getSubjectsForSemester().length > 0 && getSemesterCGPA() && (
+              <TableRow>
+                <TableCell 
+                  colSpan={6} 
+                  align="center" 
+                  sx={{ 
+                    border: "1px solid gray", 
+                    fontWeight: "bold",
+                    bgcolor: "action.hover",
+                    textAlign: "center"
+                  }}
+                >
+                  SGPA: {getSemesterCGPA() || "-"}
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </TableContainer>
@@ -151,4 +244,4 @@ const Iat = () => {
   );
 };
 
-export default Iat;
+export default External;

@@ -312,7 +312,7 @@ const Dashboard = () => {
             
             <Grid item xs={12} sm={6} md={isLight ? 6 : 6} lg={isLight ? 4 : 4}>
               <StudentTile
-                title="PO Attainment"
+                title="PO Attainment and Bloom's Level"
                 icon={<AnalyticsIcon />}
                 link="/po-attainment-grading"
               />

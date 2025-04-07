@@ -1,21 +1,43 @@
 import { useState } from "react";
-import { Box, Button, CircularProgress, Typography } from "@mui/material";
+import { 
+  Box, 
+  Button, 
+  CircularProgress, 
+  Typography, 
+  Container,
+  Paper,
+  Stack,
+  Divider,
+  Alert,
+  List,
+  ListItem,
+  ListItemText
+} from "@mui/material";
+import { 
+  FileDownload as FileDownloadIcon,
+  CloudUpload as CloudUploadIcon,
+  HelpOutline as HelpOutlineIcon
+} from '@mui/icons-material';
+import { alpha, useTheme } from "@mui/material/styles";
 import Papa from "papaparse";
 import axios from "axios";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 const AddIat = () => {
+  const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
   const [processing, setProcessing] = useState(false);
   const [successCount, setSuccessCount] = useState(0);
   const [errorCount, setErrorCount] = useState(0);
   const [errors, setErrors] = useState([]);
+  const [file, setFile] = useState(null);
 
   const downloadTemplate = () => {
     const headers = [
       "USN",
       "Sem",
-      "SubjectCode", // Added SubjectCode
+      "SubjectCode", 
       "SubjectName",
       "IAT1",
       "IAT2",
@@ -37,6 +59,12 @@ const AddIat = () => {
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
+    
+    setFile(file);
+    setProcessing(true);
+    setErrors([]);
+    setSuccessCount(0);
+    setErrorCount(0);
 
     const reader = new FileReader();
     reader.onload = async (e) => {
@@ -65,7 +93,6 @@ const AddIat = () => {
   };
 
   const processRows = async (rows) => {
-    setProcessing(true);
     let success = 0;
     let errors = 0;
     const newErrors = [];
@@ -134,44 +161,264 @@ const AddIat = () => {
   };
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Typography variant="h4" gutterBottom>
-        Upload IAT Marks
-      </Typography>
-      <Button variant="contained" onClick={downloadTemplate} sx={{ mr: 2 }}>
-        Download Template
-      </Button>
-      <input
-        accept=".csv,.json"
-        style={{ display: "none" }}
-        id="upload-file"
-        type="file"
-        onChange={handleFileUpload}
-      />
-      <label htmlFor="upload-file">
-        <Button variant="contained" component="span">
-          Upload File
-        </Button>
-      </label>
-
-      {processing && <CircularProgress sx={{ mt: 2 }} />}
-
-      {!processing && (successCount > 0 || errorCount > 0) && (
-        <Box sx={{ mt: 2 }}>
-          <Typography>Successfully processed: {successCount}</Typography>
-          <Typography>Errors: {errorCount}</Typography>
-          {errors.length > 0 && (
-            <Box sx={{ mt: 1, maxHeight: 200, overflowY: "auto" }}>
-              {errors.map((error, index) => (
-                <Typography key={index} color="error">
-                  {error}
-                </Typography>
-              ))}
-            </Box>
-          )}
+    <Container maxWidth="md">
+      <Paper
+        elevation={3}
+        sx={{
+          p: 4,
+          borderRadius: 2,
+          backgroundColor: isLight 
+            ? 'rgba(255, 255, 255, 0.8)'
+            : alpha(theme.palette.background.paper, 0.8),
+          backdropFilter: 'blur(8px)',
+          boxShadow: isLight
+            ? '0 8px 32px 0 rgba(31, 38, 135, 0.15)'
+            : '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+          mb: 4
+        }}
+      >
+        <Box 
+          sx={{ 
+            textAlign: 'center',
+            mb: 4
+          }}
+        >
+          <Typography 
+            variant="h4"
+            sx={{
+              fontWeight: 'bold',
+              background: isLight 
+                ? `-webkit-linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`
+                : `-webkit-linear-gradient(45deg, ${theme.palette.info.main}, ${theme.palette.info.dark})`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              mb: 1,
+            }}
+          >
+            Upload IAT Marks
+          </Typography>
+          
+          <Typography 
+            variant="body1" 
+            color="text.secondary"
+            sx={{ maxWidth: 600, mx: 'auto' }}
+          >
+            Upload a CSV file with Internal Assessment Test marks for students
+          </Typography>
         </Box>
-      )}
-    </Box>
+
+        <Box
+          sx={{
+            backgroundColor: isLight 
+              ? alpha(theme.palette.primary.main, 0.04)
+              : alpha(theme.palette.info.main, 0.08),
+            p: 3,
+            borderRadius: 2,
+            mb: 3,
+          }}
+        >
+          <Typography variant="h6" gutterBottom>
+            Upload Instructions
+          </Typography>
+          
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Please ensure your CSV file has the following columns:
+          </Typography>
+          
+          <Box 
+            sx={{ 
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 0.5,
+              mb: 3,
+              pl: 2,
+              borderLeft: `4px solid ${isLight ? theme.palette.primary.main : theme.palette.info.main}`,
+              py: 1,
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">• USN - Student USN</Typography>
+            <Typography variant="body2" color="text.secondary">• Sem - Semester number</Typography>
+            <Typography variant="body2" color="text.secondary">• SubjectCode - Course code</Typography>
+            <Typography variant="body2" color="text.secondary">• SubjectName - Course name</Typography>
+            <Typography variant="body2" color="text.secondary">• IAT1 - First IAT marks</Typography>
+            <Typography variant="body2" color="text.secondary">• IAT2 - Second IAT marks</Typography>
+            <Typography variant="body2" color="text.secondary">• IAT3 - Third IAT marks</Typography>
+          </Box>
+
+          <Divider sx={{ my: 3 }} />
+
+          <Stack 
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Button 
+              variant="outlined" 
+              onClick={downloadTemplate}
+              startIcon={<FileDownloadIcon />}
+              sx={{
+                borderRadius: '8px',
+                py: 1.2,
+                px: 3,
+                width: { xs: '100%', sm: 'auto' },
+                borderColor: isLight ? theme.palette.primary.main : theme.palette.info.main,
+                color: isLight ? theme.palette.primary.main : theme.palette.info.main,
+                '&:hover': {
+                  borderColor: isLight ? theme.palette.primary.main : theme.palette.info.main,
+                  backgroundColor: isLight 
+                    ? alpha(theme.palette.primary.main, 0.04)
+                    : alpha(theme.palette.info.main, 0.08),
+                }
+              }}
+            >
+              Download Template
+            </Button>
+            
+            <Box
+              sx={{
+                position: 'relative',
+                width: { xs: '100%', sm: 'auto' }
+              }}
+            >
+              <input
+                accept=".csv,.json"
+                style={{ display: 'none' }}
+                id="upload-file"
+                type="file"
+                onChange={handleFileUpload}
+              />
+              <label htmlFor="upload-file">
+                <Button 
+                  variant="contained" 
+                  component="span"
+                  startIcon={<CloudUploadIcon />}
+                  disabled={processing}
+                  sx={{
+                    borderRadius: '8px',
+                    py: 1.2,
+                    px: 3,
+                    width: { xs: '100%', sm: 'auto' },
+                    position: 'relative',
+                    bgcolor: isLight ? theme.palette.primary.main : theme.palette.info.main,
+                    '&:hover': {
+                      bgcolor: isLight 
+                        ? theme.palette.primary.dark
+                        : theme.palette.info.dark,
+                    }
+                  }}
+                >
+                  {processing ? (
+                    <>
+                      <CircularProgress
+                        size={24}
+                        thickness={4}
+                        sx={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          marginTop: '-12px',
+                          marginLeft: '-12px',
+                          color: 'white',
+                        }}
+                      />
+                      Processing...
+                    </>
+                  ) : (
+                    `${file ? 'File Selected' : 'Upload File'}`
+                  )}
+                </Button>
+              </label>
+            </Box>
+          </Stack>
+        </Box>
+
+        {!processing && (successCount > 0 || errorCount > 0) && (
+          <Box sx={{ mt: 3 }}>
+            {successCount > 0 && (
+              <Alert 
+                severity="success" 
+                sx={{ 
+                  mb: 2,
+                  borderRadius: 2,
+                }}
+              >
+                Successfully processed: {successCount} student record(s)
+              </Alert>
+            )}
+            
+            {errorCount > 0 && (
+              <Alert 
+                severity="error" 
+                sx={{ 
+                  mb: 2,
+                  borderRadius: 2,
+                }}
+              >
+                Errors encountered: {errorCount} record(s)
+              </Alert>
+            )}
+            
+            {errors.length > 0 && (
+              <Box 
+                sx={{ 
+                  mt: 2,
+                  backgroundColor: isLight 
+                    ? alpha(theme.palette.error.main, 0.05)
+                    : alpha(theme.palette.error.dark, 0.1),
+                  borderRadius: 2,
+                  p: 2,
+                  maxHeight: 200,
+                  overflowY: "auto",
+                  border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>Error Details:</Typography>
+                <List dense>
+                  {errors.map((error, index) => (
+                    <ListItem key={index} sx={{ py: 0.5 }}>
+                      <ListItemText 
+                        primary={error}
+                        primaryTypographyProps={{ 
+                          variant: 'body2', 
+                          color: 'error.main' 
+                        }}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+            )}
+          </Box>
+        )}
+
+        <Paper 
+          elevation={1} 
+          sx={{ 
+            p: 2,
+            mt: 4,
+            backgroundColor: isLight 
+              ? alpha(theme.palette.warning.main, 0.05)
+              : alpha(theme.palette.warning.dark, 0.05),
+            border: `1px dashed ${alpha(theme.palette.warning.main, 0.2)}`,
+            borderRadius: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+          }}
+        >
+          <HelpOutlineIcon 
+            fontSize="small" 
+            color="warning" 
+            sx={{ flexShrink: 0 }}
+          />
+          <Typography variant="body2" color="text.secondary">
+            <strong>Note:</strong> Make sure each USN corresponds to a registered student in the system. 
+            Missing or invalid USNs will result in errors.
+          </Typography>
+        </Paper>
+      </Paper>
+    </Container>
   );
 };
 

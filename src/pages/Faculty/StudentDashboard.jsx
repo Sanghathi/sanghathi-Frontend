@@ -146,12 +146,21 @@ const StudentDashboard = () => {
   useEffect(() => {
     const fetchMenteeData = async () => {
       try {
-        // Example: Fetch basic mentee profile data.  You'll likely need
-        // separate API calls for each section (profile, career review, etc.)
-        const response = await axios.get(
-          `${BASE_URL}/student-profiles/${menteeId}`
+        // Fetch the student profile
+        const profileResponse = await axios.get(
+          `${BASE_URL}/student-profiles/${menteeId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`
+            }
+          }
         );
-        setMenteeData(response.data);
+        console.log("Student profile response:", profileResponse.data);
+        
+        let userData = profileResponse.data;
+        
+        // Skip the user endpoint since it's returning 500 error
+        setMenteeData(userData);
       } catch (err) {
         setError("Error fetching mentee data.");
         console.error(err);
@@ -172,9 +181,35 @@ const StudentDashboard = () => {
   if (error) {
     return <Typography color="error">{error}</Typography>;
   }
+
+  console.log("Full menteeData structure:", menteeData);
+  
+  // Get mentee name based on the student profile structure
+  const getFullName = () => {
+    if (menteeData?.fullName) {
+      const { firstName, middleName, lastName } = menteeData.fullName;
+      if (middleName) {
+        return `${firstName} ${middleName} ${lastName}`;
+      }
+      return `${firstName} ${lastName}`;
+    }
+    
+    // Fallbacks if fullName structure is not available
+    return menteeData?.name || 
+           (menteeData?.firstName && menteeData?.lastName 
+             ? `${menteeData.firstName} ${menteeData.lastName}`
+             : menteeData?.firstName) ||
+           menteeData?.studentName ||
+           menteeData?.usn || // Use USN if nothing else is available
+           "Mentee";
+  };
+  
+  const menteeName = getFullName();
+
+  console.log("Extracted mentee name:", menteeName);
   
   return (
-    <Page title="Mentee Dashboard">
+    <Page title={`${menteeName}'s Dashboard`}>
       <Box
         sx={{
           pt: 3,
@@ -233,7 +268,7 @@ const StudentDashboard = () => {
                     }
                   }}
                 >
-                  Mentee Dashboard
+                  {menteeName}'s Dashboard
                 </Typography>
                 
                 <Typography 
@@ -287,7 +322,7 @@ const StudentDashboard = () => {
                     }
                   }}
                 >
-                  Mentee Dashboard
+                  {menteeName}'s Dashboard
                 </Typography>
                 
                 <Typography 

@@ -6,7 +6,17 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import api from "../../utils/axios"; // axios instance
 
 // @mui
-import { Box, Grid, Card, Stack, Typography } from "@mui/material";
+import { 
+  Box, 
+  Grid, 
+  Card, 
+  Stack, 
+  Typography, 
+  Divider, 
+  Button, 
+  useTheme,
+  alpha,
+} from "@mui/material";
 import { LoadingButton } from "@mui/lab";
 
 // components
@@ -54,6 +64,7 @@ const options = [
 ];
 
 export default function UserForm({ editingUser }) {
+  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const [avatar, setAvatar] = useState(null);
   const [roleId, setRoleId] = useState("");
@@ -223,150 +234,191 @@ export default function UserForm({ editingUser }) {
     [setValue, setAvatar]
   );
 
+  const handleReset = () => {
+    reset({
+      name: "",
+      email: "",
+      phone: "",
+      password: "",
+      passwordConfirm: "",
+      role: "student",
+      department: "",
+      sem: "",
+      usn: "",
+    });
+    setAvatar(null);
+  };
+
   return (
     <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
-          <Card sx={{ py: 10, px: 3, textAlign: "center" }}>
-            <RHFUploadAvatar
-              name="avatar"
-              accept="image/*"
-              maxSize={3145728}
-              onDrop={handleDrop}
-              helperText={
-                <Typography
-                  variant="caption"
-                  sx={{
-                    mt: 2,
-                    mx: "auto",
-                    display: "block",
-                    textAlign: "center",
-                    color: "text.secondary",
-                  }}
-                >
-                  Allowed *.jpeg, *.jpg, *.png, *.gif
-                  <br /> max size of 3MB
-                </Typography>
-              }
-            />
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={8}>
-          <Card sx={{ p: 3 }}>
-            <Stack spacing={3}>
-              <RHFTextField
-                name="name"
-                label="Name"
-                required
-                fullWidth
-                autoComplete="given-name"
-              />
-              <RHFTextField
-                name="email"
-                label="Email"
-                type="email"
-                required
-                fullWidth
-                autoComplete="email"
-              />
-              <RHFTextField
-                name="department"
-                label="Department"
-                required
-                fullWidth
-              />
-              <RHFTextField
-                name="sem"
-                label="sem"
-                fullWidth
-              />
-              <RHFTextField
-                name="usn"
-                label="USN"
-                fullWidth
-              />
-              <RHFTextField
-                name="phone"
-                label="Phone"
-                type="tel"
-                required
-                fullWidth
-                autoComplete="tel"
-              />
-              <RHFSelect name="role" label="Role" fullWidth required>
-                {options.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </RHFSelect>
-              <Box
-                sx={{
-                  display: "grid",
-                  rowGap: 5,
-                  columnGap: 2,
-                  gridTemplateColumns: {
-                    xs: "repeat(1, 1fr)",
-                    sm: "repeat(2, 1fr)",
-                  },
-                }}
-              >
-                <RHFTextField
-                  name="password"
-                  label="Password"
-                  type="password"
-                  required={!!editingUser}
-                  fullWidth
-                  autoComplete="new-password"
-                  disabled={!!editingUser}
-                />
-                <RHFTextField
-                  name="passwordConfirm"
-                  label="Confirm Password"
-                  type="password"
-                  required={!!editingUser}
-                  fullWidth
-                  autoComplete="new-password"
-                  disabled={!!editingUser}
-                />
-              </Box>
-            </Stack>
-            <Stack spacing={3} alignItems="flex-end" sx={{ mt: 3 }}>
-              <Box display="flex" gap={1}>
-                {!editingUser && (
-                  <LoadingButton
-                    variant="outlined"
-                    onClick={() => {
-                      reset({
-                        name: "",
-                        email: "",
-                        phone: "",
-                        password: "",
-                        passwordConfirm: "",
-                        role: "admin",
-                        department: "",
-                        sem: "",
-                        usn: "",
-                      });
-                      setAvatar(null);
+      <Card sx={{ boxShadow: 1 }}>
+        
+
+        <Grid container spacing={3} sx={{ p: 3, backgroundColor: theme.palette.background.default }}>
+          <Grid item xs={12} md={4}>
+            <Card sx={{ 
+              py: 10, 
+              px: 3, 
+              textAlign: "center", 
+              height: '100%',
+              backgroundColor: theme.palette.background.paper,
+              boxShadow: theme.shadows[2]
+            }}>
+              <RHFUploadAvatar
+                name="avatar"
+                accept="image/*"
+                maxSize={3145728}
+                onDrop={handleDrop}
+                helperText={
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      mt: 2,
+                      mx: "auto",
+                      display: "block",
+                      textAlign: "center",
+                      color: "text.secondary",
                     }}
                   >
-                    Reset
-                  </LoadingButton>
-                )}
-                <LoadingButton
-                  type="submit"
-                  variant="contained"
-                  loading={isSubmitting}
+                    Allowed *.jpeg, *.jpg, *.png, *.gif
+                    <br /> max size of 3MB
+                  </Typography>
+                }
+              />
+            </Card>
+          </Grid>
+          
+          <Grid item xs={12} md={8}>
+            <Card sx={{ 
+              p: 3, 
+              height: '100%',
+              backgroundColor: theme.palette.background.paper,
+              boxShadow: theme.shadows[2]
+            }}>
+              <Stack spacing={3}>
+                <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                  Basic Information
+                </Typography>
+                
+                <RHFTextField
+                  name="name"
+                  label="Full Name"
+                  required
+                  fullWidth
+                  autoComplete="given-name"
+                />
+                
+                <RHFTextField
+                  name="email"
+                  label="Email Address"
+                  type="email"
+                  required
+                  fullWidth
+                  autoComplete="email"
+                />
+                
+                <RHFTextField
+                  name="phone"
+                  label="Phone Number"
+                  type="tel"
+                  required
+                  fullWidth
+                  autoComplete="tel"
+                />
+                
+                <Divider />
+                
+                <Typography variant="subtitle1">
+                  Academic Information
+                </Typography>
+                
+                <RHFTextField
+                  name="department"
+                  label="Department"
+                  required
+                  fullWidth
+                />
+                
+                <Box
+                  sx={{
+                    display: "grid",
+                    columnGap: 2,
+                    rowGap: 3,
+                    gridTemplateColumns: { xs: "repeat(1, 1fr)", sm: "repeat(2, 1fr)" },
+                  }}
                 >
-                  {editingUser ? "Update User" : "Create User"}
-                </LoadingButton>
-              </Box>
-            </Stack>
-          </Card>
+                  <RHFTextField name="sem" label="Semester" fullWidth />
+                  <RHFTextField name="usn" label="USN" fullWidth />
+                </Box>
+                
+                <Divider />
+                
+                <Typography variant="subtitle1">
+                  Account Settings
+                </Typography>
+                
+                <RHFSelect name="role" label="Role" fullWidth required>
+                  {options.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </RHFSelect>
+                
+                <Box
+                  sx={{
+                    display: "grid",
+                    columnGap: 2,
+                    rowGap: 3,
+                    gridTemplateColumns: { xs: "repeat(1, 1fr)", sm: "repeat(2, 1fr)" },
+                  }}
+                >
+                  <RHFTextField
+                    name="password"
+                    label="Password"
+                    type="password"
+                    required={!editingUser}
+                    fullWidth
+                    autoComplete="new-password"
+                    disabled={!!editingUser}
+                  />
+                  <RHFTextField
+                    name="passwordConfirm"
+                    label="Confirm Password"
+                    type="password"
+                    required={!editingUser}
+                    fullWidth
+                    autoComplete="new-password"
+                    disabled={!!editingUser}
+                  />
+                </Box>
+                
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, gap: 2 }}>
+                  {!editingUser && (
+                    <Button
+                      variant="outlined"
+                      color="inherit"
+                      onClick={handleReset}
+                    >
+                      Reset
+                    </Button>
+                  )}
+                  <LoadingButton
+                    type="submit"
+                    variant="contained"
+                    color="info"
+                    loading={isSubmitting}
+                  >
+                    {editingUser ? "Update" : "Save"}
+                  </LoadingButton>
+                </Box>
+              </Stack>
+            </Card>
+          </Grid>
         </Grid>
-      </Grid>
+      </Card>
     </FormProvider>
   );
 }
+
 export {getUserSchema};
