@@ -5,7 +5,7 @@ import SidebarDrawer from "./SidebarDrawer";
 import NavItemsList from "./NavItemsList";
 import FlexBetween from "../../components/FlexBetween";
 import logo from "../../public/logo.png";
-import { Box, IconButton, useTheme } from "@mui/material";
+import { Box, IconButton, useTheme, Typography } from "@mui/material";
 import { ChevronLeft } from "@mui/icons-material";
 import { AuthContext } from "../../context/AuthContext";
 
@@ -22,7 +22,7 @@ const Sidebar = ({
   const { user } = useContext(AuthContext);
 
   const normalizeText = (text) => {
-    return text.toLowerCase().replace(/[\s_-]/g, "");
+    return text.replace(/[\s_-]/g, "");
   };
 
   useEffect(() => {
@@ -44,17 +44,14 @@ const Sidebar = ({
           drawerWidth={drawerWidth}
           onBackdropClick={onBackdropClick}
         >
-          <Box display="flex" alignSelf="center">
+          <Box display="flex" flexDirection="column" alignItems="center">
             <img
               src={logo}
               alt="CMRIT Logo"
-              width="100"
               style={{
-                transform: "scale(2)",
-                filter:
-                  theme.palette.mode === "dark"
-                    ? "invert(100%) hue-rotate(180deg)"
-                    : "none",
+                filter: "none",
+                margin: "20px 5px",
+                width: "115px",
               }}
             />
           </Box>

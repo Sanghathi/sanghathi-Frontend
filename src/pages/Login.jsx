@@ -144,11 +144,8 @@ const Login = () => {
                       src={logo}
                       alt="Logo"
                       style={{
-                        width: "200px",
-                        filter:
-                          theme.palette.mode === "dark"
-                            ? "invert(50%) brightness(200%)"
-                            : "none",
+                        width: "70px",
+                        filter: "none"
                       }}
                     />
                   </Box>

@@ -1,8 +1,7 @@
 import { capitalCase } from "change-case";
-
 import { useState } from "react";
 // @mui
-import { Container, Tab, Box, Tabs } from "@mui/material";
+import { Container, Tab, Box, Tabs, useTheme } from "@mui/material";
 // routes
 
 // hooks
@@ -21,6 +20,7 @@ import React from "react";
 // ----------------------------------------------------------------------
 
 export default function User() {
+  const theme = useTheme();
   const [editingUser, setEditingUser] = useState(null);
   const { currentTab, onChangeTab } = useTabs("Create User");
 
@@ -53,6 +53,17 @@ export default function User() {
           scrollButtons="auto"
           value={currentTab}
           onChange={onChangeTab}
+          sx={{
+            '& .MuiTab-root': {
+              color: theme.palette.text.secondary,
+              '&.Mui-selected': {
+                color: theme.palette.info.main,
+              },
+            },
+            '& .MuiTabs-indicator': {
+              backgroundColor: theme.palette.info.main,
+            },
+          }}
         >
           {ACCOUNT_TABS.map((tab) => (
             <Tab
