@@ -35,31 +35,65 @@ import { alpha, useTheme } from "@mui/material/styles";
 // Define role options with their related info
 const ROLES = [
   { 
-    value: "STUDENT", 
+    value: "student", 
     label: "Students", 
     icon: <PersonIcon />,
     template: [
-      "Name", "USN", "Email", "Phone", "Password", "Branch", "Semester", "Section", "PUC Percentage", "DOB"
+      "Full Name",
+      "Email Address",
+      "Phone Number",
+      "Department",
+      "Semester",
+      "USN",
+      "Password"
     ],
-    exampleRow: ["John Smith", "1MS21CS001", "john@example.com", "9876543210", "password123", "CSE", "3", "A", "92.5", "2003-05-15"]
+    exampleRow: [
+      "John Smith",
+      "john@example.com",
+      "9876543210",
+      "CSE",
+      "3",
+      "1MS21CS001",
+      "password123"
+    ]
   },
   { 
-    value: "FACULTY", 
+    value: "faculty", 
     label: "Faculty", 
     icon: <SchoolIcon />,
     template: [
-      "Name", "Email", "Phone", "Password", "Department", "Designation", "DOB"
+      "Full Name",
+      "Email Address",
+      "Phone Number",
+      "Department",
+      "Password"
     ],
-    exampleRow: ["Dr. Jane Doe", "jane@example.com", "9876543211", "password123", "Computer Science", "Associate Professor", "1985-10-20"]
+    exampleRow: [
+      "Dr. Jane Doe",
+      "jane@example.com",
+      "9876543211",
+      "Computer Science",
+      "password123"
+    ]
   },
   { 
-    value: "ADMIN", 
+    value: "admin", 
     label: "Admin", 
     icon: <SupervisorAccountIcon />,
     template: [
-      "Name", "Email", "Phone", "Password", "Department", "DOB"
+      "Full Name",
+      "Email Address",
+      "Phone Number",
+      "Department",
+      "Password"
     ],
-    exampleRow: ["Admin User", "admin@example.com", "9876543212", "password123", "Administration", "1980-01-01"]
+    exampleRow: [
+      "Admin User",
+      "admin@example.com",
+      "9876543212",
+      "Administration",
+      "password123"
+    ]
   }
 ];
 
@@ -67,7 +101,7 @@ const AddStudents = () => {
   const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
   const isLight = theme.palette.mode === 'light';
-  const [selectedRole, setSelectedRole] = useState("STUDENT");
+  const [selectedRole, setSelectedRole] = useState("student");
   const [processing, setProcessing] = useState(false);
   const [successCount, setSuccessCount] = useState(0);
   const [errorCount, setErrorCount] = useState(0);
@@ -158,55 +192,81 @@ const AddStudents = () => {
         let endpoint;
         let data;
 
-        // Role is automatically determined based on the selected tab
-        if (selectedRole === "STUDENT") {
-          if (!row.Name || !row.USN || !row.Email || !row.Password) {
-            throw new Error("Missing required fields (Name, USN, Email, Password)");
+        if (selectedRole === "student") {
+          if (!row["Full Name"] || !row["Email Address"] || !row["Phone Number"] || !row["Password"] || !row["USN"]) {
+            throw new Error("Missing required fields (Full Name, Email Address, Phone Number, USN, Password)");
           }
-          endpoint = `/auth/student/register`;
+          if (row["Password"].length < 8) {
+            throw new Error("Password must be at least 8 characters long");
+          }
+          
+          // Split the full name into first and last name
+          const nameParts = row["Full Name"].split(" ");
+          const firstName = nameParts[0];
+          const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : firstName; // Use first name as last name if not provided
+          
+          endpoint = `/users/signup`;
           data = {
-            name: row.Name,
-            usn: row.USN,
-            email: row.Email,
-            phone: row.Phone,
-            password: row.Password,
-            branch: row.Branch,
-            semester: row.Semester ? parseInt(row.Semester, 10) : undefined,
-            section: row.Section,
-            pucPercentage: row.PUC_Percentage ? parseFloat(row.PUC_Percentage) : undefined,
-            dob: row.DOB,
+            name: row["Full Name"],
+            email: row["Email Address"],
+            phone: row["Phone Number"],
+            department: row["Department"],
+            semester: row["Semester"] ? parseInt(row["Semester"], 10) : undefined,
+            usn: row["USN"],
+            password: row["Password"],
+            passwordConfirm: row["Password"],
+            roleName: selectedRole,
+            firstName: firstName,
+            lastName: lastName
           };
-        } else if (selectedRole === "FACULTY") {
-          if (!row.Name || !row.Email || !row.Password) {
-            throw new Error("Missing required fields (Name, Email, Password)");
+        } else if (selectedRole === "faculty") {
+          if (!row["Full Name"] || !row["Email Address"] || !row["Phone Number"] || !row["Password"]) {
+            throw new Error("Missing required fields (Full Name, Email Address, Phone Number, Password)");
           }
-          endpoint = `/auth/faculty/register`;
+          if (row["Password"].length < 8) {
+            throw new Error("Password must be at least 8 characters long");
+          }
+          endpoint = `/users/signup`;
           data = {
-            name: row.Name,
-            email: row.Email,
-            phone: row.Phone,
-            password: row.Password,
-            department: row.Department,
-            designation: row.Designation,
-            dob: row.DOB,
+            name: row["Full Name"],
+            email: row["Email Address"],
+            phone: row["Phone Number"],
+            department: row["Department"],
+            password: row["Password"],
+            passwordConfirm: row["Password"],
+            roleName: selectedRole
           };
-        } else if (selectedRole === "ADMIN") {
-          if (!row.Name || !row.Email || !row.Password) {
-            throw new Error("Missing required fields (Name, Email, Password)");
+        } else if (selectedRole === "admin") {
+          if (!row["Full Name"] || !row["Email Address"] || !row["Phone Number"] || !row["Password"]) {
+            throw new Error("Missing required fields (Full Name, Email Address, Phone Number, Password)");
           }
-          endpoint = `/auth/admin/register`;
+          if (row["Password"].length < 8) {
+            throw new Error("Password must be at least 8 characters long");
+          }
+          endpoint = `/users/signup`;
           data = {
-            name: row.Name,
-            email: row.Email,
-            phone: row.Phone,
-            password: row.Password,
-            department: row.Department,
-            dob: row.DOB,
+            name: row["Full Name"],
+            email: row["Email Address"],
+            phone: row["Phone Number"],
+            department: row["Department"],
+            password: row["Password"],
+            passwordConfirm: row["Password"],
+            roleName: selectedRole
           };
         }
 
-        await api.post(endpoint, data);
-        success++;
+        try {
+          console.log("Sending data:", data); // Add this for debugging
+          const response = await api.post(endpoint, data);
+          if (response.data) {
+            success++;
+          }
+        } catch (error) {
+          errors++;
+          const errorMessage = error.response?.data?.message || error.message;
+          console.error("Error details:", error.response?.data); // Keep this for debugging
+          newErrors.push(`Row ${index + 1}: ${errorMessage}`);
+        }
       } catch (error) {
         errors++;
         newErrors.push(`Row ${index + 1}: ${error.response?.data?.message || error.message}`);

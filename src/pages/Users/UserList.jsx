@@ -74,11 +74,10 @@ function UserList({ onEdit }) {
 
   const getAllUsers = useCallback(async () => {
     try {
-      const response = await api("/users");
-      const { status, data } = await response.data;
-      if (status === "success") {
-        const users = data.users;
-        console.log("Users data:", users);
+      const response = await api.get("/users");
+      if (response.data.status === "success") {
+        const users = response.data.data.users;
+        console.log("All users data:", users);
         setUsers(users);
       } else {
         throw new Error("Error fetching users");
@@ -114,67 +113,10 @@ function UserList({ onEdit }) {
         await Promise.all(selectedUsers.map(async (userId) => {
           // Delete user data from all related models
           const deletePromises = [
-            api.delete(`users/${userId}`).catch(() => {}), // Always try to delete user
-            api.delete(`students/profile/${userId}`).catch(() => {}),
-            api.delete(`faculty/profile/${userId}`).catch(() => {}),
-            api.delete(`local-guardian/${userId}`).catch(() => {}),
-            api.delete(`mentorship/mentee/${userId}`).catch(() => {}),
-            api.delete(`mentorship/mentor/${userId}`).catch(() => {}),
-            api.delete(`career-counselling/clubs/${userId}`).catch(() => {}),
-            api.delete(`career-counselling/club-events/${userId}`).catch(() => {}),
-            api.delete(`career-counselling/professional-body/${userId}`).catch(() => {}),
-            api.delete(`career-counselling/professional-body-events/${userId}`).catch(() => {}),
-            api.delete(`career-counselling/mooc/${userId}`).catch(() => {}),
-            api.delete(`career-counselling/activity/${userId}`).catch(() => {}),
-            api.delete(`career-counselling/career-counselling/${userId}`).catch(() => {}),
-            api.delete(`conversations/private/${userId}`).catch(() => {}),
-            api.delete(`threads/user/${userId}`).catch(() => {}),
-            api.delete(`notifications/user/${userId}`).catch(() => {}),
-            api.delete(`attendance/records/${userId}`).catch(() => {}),
-            api.delete(`academic/performance/${userId}`).catch(() => {}),
-            api.delete(`academic/courses/${userId}`).catch(() => {}),
-            api.delete(`academic/assignments/${userId}`).catch(() => {}),
-            api.delete(`academic/exams/${userId}`).catch(() => {}),
-            api.delete(`academic/feedback/${userId}`).catch(() => {}),
-            api.delete(`library/books/${userId}`).catch(() => {}),
-            api.delete(`library/transactions/${userId}`).catch(() => {}),
-            api.delete(`hostel/rooms/${userId}`).catch(() => {}),
-            api.delete(`hostel/complaints/${userId}`).catch(() => {}),
-            api.delete(`transport/routes/${userId}`).catch(() => {}),
-            api.delete(`transport/passes/${userId}`).catch(() => {}),
-            api.delete(`events/registrations/${userId}`).catch(() => {}),
-            api.delete(`events/feedback/${userId}`).catch(() => {}),
-            api.delete(`alumni/records/${userId}`).catch(() => {}),
-            api.delete(`alumni/events/${userId}`).catch(() => {}),
-            api.delete(`alumni/feedback/${userId}`).catch(() => {}),
-            api.delete(`research/papers/${userId}`).catch(() => {}),
-            api.delete(`research/projects/${userId}`).catch(() => {}),
-            api.delete(`research/publications/${userId}`).catch(() => {}),
-            api.delete(`placement/records/${userId}`).catch(() => {}),
-            api.delete(`placement/interviews/${userId}`).catch(() => {}),
-            api.delete(`placement/offers/${userId}`).catch(() => {}),
-            api.delete(`placement/feedback/${userId}`).catch(() => {}),
-            api.delete(`scholarship/applications/${userId}`).catch(() => {}),
-            api.delete(`scholarship/awards/${userId}`).catch(() => {}),
-            api.delete(`scholarship/feedback/${userId}`).catch(() => {}),
-            api.delete(`complaints/records/${userId}`).catch(() => {}),
-            api.delete(`complaints/responses/${userId}`).catch(() => {}),
-            api.delete(`complaints/feedback/${userId}`).catch(() => {}),
-            api.delete(`feedback/surveys/${userId}`).catch(() => {}),
-            api.delete(`feedback/responses/${userId}`).catch(() => {}),
-            api.delete(`feedback/analysis/${userId}`).catch(() => {}),
-            api.delete(`documents/uploaded/${userId}`).catch(() => {}),
-            api.delete(`documents/shared/${userId}`).catch(() => {}),
-            api.delete(`documents/versions/${userId}`).catch(() => {}),
-            api.delete(`settings/preferences/${userId}`).catch(() => {}),
-            api.delete(`settings/notifications/${userId}`).catch(() => {}),
-            api.delete(`settings/security/${userId}`).catch(() => {}),
-            api.delete(`analytics/views/${userId}`).catch(() => {}),
-            api.delete(`analytics/actions/${userId}`).catch(() => {}),
-            api.delete(`analytics/reports/${userId}`).catch(() => {}),
-            api.delete(`backup/records/${userId}`).catch(() => {}),
-            api.delete(`backup/restore/${userId}`).catch(() => {}),
-            api.delete(`backup/versions/${userId}`).catch(() => {})
+            api.delete(`/users/${userId}`), // Delete user
+            api.delete(`/students/profile/${userId}`), // Delete student profile if exists
+            api.delete(`/faculty/profile/${userId}`), // Delete faculty profile if exists
+            api.delete(`/notifications/${userId}`), // Delete user notifications
           ];
           await Promise.all(deletePromises);
         }));
@@ -186,67 +128,10 @@ function UserList({ onEdit }) {
       } else if (selectedUser) {
         // Single user delete
         const deletePromises = [
-          api.delete(`users/${selectedUser._id}`).catch(() => {}), // Always try to delete user
-          api.delete(`students/profile/${selectedUser._id}`).catch(() => {}),
-          api.delete(`faculty/profile/${selectedUser._id}`).catch(() => {}),
-          api.delete(`local-guardian/${selectedUser._id}`).catch(() => {}),
-          api.delete(`mentorship/mentee/${selectedUser._id}`).catch(() => {}),
-          api.delete(`mentorship/mentor/${selectedUser._id}`).catch(() => {}),
-          api.delete(`career-counselling/clubs/${selectedUser._id}`).catch(() => {}),
-          api.delete(`career-counselling/club-events/${selectedUser._id}`).catch(() => {}),
-          api.delete(`career-counselling/professional-body/${selectedUser._id}`).catch(() => {}),
-          api.delete(`career-counselling/professional-body-events/${selectedUser._id}`).catch(() => {}),
-          api.delete(`career-counselling/mooc/${selectedUser._id}`).catch(() => {}),
-          api.delete(`career-counselling/activity/${selectedUser._id}`).catch(() => {}),
-          api.delete(`career-counselling/career-counselling/${selectedUser._id}`).catch(() => {}),
-          api.delete(`conversations/private/${selectedUser._id}`).catch(() => {}),
-          api.delete(`threads/user/${selectedUser._id}`).catch(() => {}),
-          api.delete(`notifications/user/${selectedUser._id}`).catch(() => {}),
-          api.delete(`attendance/records/${selectedUser._id}`).catch(() => {}),
-          api.delete(`academic/performance/${selectedUser._id}`).catch(() => {}),
-          api.delete(`academic/courses/${selectedUser._id}`).catch(() => {}),
-          api.delete(`academic/assignments/${selectedUser._id}`).catch(() => {}),
-          api.delete(`academic/exams/${selectedUser._id}`).catch(() => {}),
-          api.delete(`academic/feedback/${selectedUser._id}`).catch(() => {}),
-          api.delete(`library/books/${selectedUser._id}`).catch(() => {}),
-          api.delete(`library/transactions/${selectedUser._id}`).catch(() => {}),
-          api.delete(`hostel/rooms/${selectedUser._id}`).catch(() => {}),
-          api.delete(`hostel/complaints/${selectedUser._id}`).catch(() => {}),
-          api.delete(`transport/routes/${selectedUser._id}`).catch(() => {}),
-          api.delete(`transport/passes/${selectedUser._id}`).catch(() => {}),
-          api.delete(`events/registrations/${selectedUser._id}`).catch(() => {}),
-          api.delete(`events/feedback/${selectedUser._id}`).catch(() => {}),
-          api.delete(`alumni/records/${selectedUser._id}`).catch(() => {}),
-          api.delete(`alumni/events/${selectedUser._id}`).catch(() => {}),
-          api.delete(`alumni/feedback/${selectedUser._id}`).catch(() => {}),
-          api.delete(`research/papers/${selectedUser._id}`).catch(() => {}),
-          api.delete(`research/projects/${selectedUser._id}`).catch(() => {}),
-          api.delete(`research/publications/${selectedUser._id}`).catch(() => {}),
-          api.delete(`placement/records/${selectedUser._id}`).catch(() => {}),
-          api.delete(`placement/interviews/${selectedUser._id}`).catch(() => {}),
-          api.delete(`placement/offers/${selectedUser._id}`).catch(() => {}),
-          api.delete(`placement/feedback/${selectedUser._id}`).catch(() => {}),
-          api.delete(`scholarship/applications/${selectedUser._id}`).catch(() => {}),
-          api.delete(`scholarship/awards/${selectedUser._id}`).catch(() => {}),
-          api.delete(`scholarship/feedback/${selectedUser._id}`).catch(() => {}),
-          api.delete(`complaints/records/${selectedUser._id}`).catch(() => {}),
-          api.delete(`complaints/responses/${selectedUser._id}`).catch(() => {}),
-          api.delete(`complaints/feedback/${selectedUser._id}`).catch(() => {}),
-          api.delete(`feedback/surveys/${selectedUser._id}`).catch(() => {}),
-          api.delete(`feedback/responses/${selectedUser._id}`).catch(() => {}),
-          api.delete(`feedback/analysis/${selectedUser._id}`).catch(() => {}),
-          api.delete(`documents/uploaded/${selectedUser._id}`).catch(() => {}),
-          api.delete(`documents/shared/${selectedUser._id}`).catch(() => {}),
-          api.delete(`documents/versions/${selectedUser._id}`).catch(() => {}),
-          api.delete(`settings/preferences/${selectedUser._id}`).catch(() => {}),
-          api.delete(`settings/notifications/${selectedUser._id}`).catch(() => {}),
-          api.delete(`settings/security/${selectedUser._id}`).catch(() => {}),
-          api.delete(`analytics/views/${selectedUser._id}`).catch(() => {}),
-          api.delete(`analytics/actions/${selectedUser._id}`).catch(() => {}),
-          api.delete(`analytics/reports/${selectedUser._id}`).catch(() => {}),
-          api.delete(`backup/records/${selectedUser._id}`).catch(() => {}),
-          api.delete(`backup/restore/${selectedUser._id}`).catch(() => {}),
-          api.delete(`backup/versions/${selectedUser._id}`).catch(() => {})
+          api.delete(`/users/${selectedUser._id}`),
+          api.delete(`/students/profile/${selectedUser._id}`),
+          api.delete(`/faculty/profile/${selectedUser._id}`),
+          api.delete(`/notifications/${selectedUser._id}`),
         ];
         await Promise.all(deletePromises);
         setUsers((prevUsers) =>

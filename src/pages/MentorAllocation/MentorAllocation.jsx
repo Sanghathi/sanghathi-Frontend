@@ -52,29 +52,41 @@ const MentorAllocation = () => {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        const response = await api.get("/students");
+        // Use the dedicated allocation-students endpoint
+        const response = await api.get("/mentors/allocation-students");
         const { data } = response.data;
-        console.log("Fetched data",data);
+        console.log("Fetched students data:", data);
         
-        setStudents(data);
+        // Check a sample student to understand structure
+        if (data && data.length > 0) {
+          console.log("Sample student structure:", JSON.stringify(data[0], null, 2));
+          console.log("Profile data:", data[0].profile);
+          console.log("Mentor data:", data[0].mentor);
+          
+          // Debug mentor structure variations
+          console.log("Direct mentor name:", data[0]?.mentor?.name);
+          console.log("Mentor ID:", data[0]?.mentorId);
+          console.log("Mentor details:", data[0]?.mentorDetails);
+        }
+        
+        setStudents(data || []);
       } catch (error) {
-        console.error(error);
+        console.error("Error fetching students:", error);
       }
     };
     fetchStudents();
   }, []);
 
   const refreshStudents = async () => {
-    const fetchStudents = async () => {
-      try {
-        const response = await api.get("/students");
-        const { data } = response.data;
-        setStudents(data);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    fetchStudents();
+    try {
+      // Use the dedicated allocation-students endpoint
+      const response = await api.get("/mentors/allocation-students");
+      const { data } = response.data;
+      
+      setStudents(data || []);
+    } catch (error) {
+      console.error("Error refreshing students:", error);
+    }
   };
 
   const handleDialogClose = () => {
@@ -82,19 +94,66 @@ const MentorAllocation = () => {
     refreshStudents(); 
   };
 
+  // Helper function to safely get profile data
+  const getProfileData = (student, field) => {
+    // Check all possible paths where the data might be
+    if (student?.profile && student.profile[field]) {
+      return student.profile[field];
+    }
+    
+    if (student?.studentProfile && student.studentProfile[field]) {
+      return student.studentProfile[field];
+    }
+    
+    if (student?.[field]) {
+      return student[field];
+    }
+    
+    return null;
+  };
+
+  // Helper function to get mentor information
+  const getMentorInfo = (student) => {
+    // Check all possible paths where mentor data might be
+    if (student?.mentor?.name) {
+      return student.mentor.name;
+    }
+    
+    if (student?.mentorName) {
+      return student.mentorName;
+    }
+    
+    if (student?.mentorId?.name) {
+      return student.mentorId.name;
+    }
+    
+    if (student?.mentorDetails?.name) {
+      return student.mentorDetails.name;
+    }
+    
+    // If we have a nested structure
+    if (student?.mentor?.mentorDetails?.name) {
+      return student.mentor.mentorDetails.name;
+    }
+    
+    return null;
+  };
+
   const filteredStudents = students.filter((student) => {
+    const mentorName = getMentorInfo(student);
+    
     const matchesMentorFilter =
       filterOption === "all" ||
-      (filterOption === "assigned" && student.mentor && student.mentor.name) ||
-      (filterOption === "unassigned" && (!student.mentor || !student.mentor.name));
+      (filterOption === "assigned" && mentorName) ||
+      (filterOption === "unassigned" && !mentorName);
 
-    const matchesSemFilter = filterSem === "all" || student.profile?.sem === filterSem;
+    const matchesSemFilter = filterSem === "all" || getProfileData(student, 'sem') === filterSem;
     const matchesBranchFilter =
-      filterBranch === "all" || student.profile?.department === filterBranch;
+      filterBranch === "all" || getProfileData(student, 'department') === filterBranch;
 
     const matchesSearch = searchQuery === "" || 
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.profile?.usn?.toLowerCase().includes(searchQuery.toLowerCase());
+      (getProfileData(student, 'usn') || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchesMentorFilter && matchesSemFilter && matchesBranchFilter && matchesSearch;
   });
@@ -143,12 +202,12 @@ const MentorAllocation = () => {
 
   const uniqueSems = [
     "all",
-    ...new Set(students.map((student) => student.profile?.sem).filter(Boolean)),
+    ...new Set(students.map((student) => getProfileData(student, 'sem')).filter(Boolean)),
   ];
   const uniqueBranches = [
     "all",
     ...new Set(
-      students.map((student) => student.profile?.department).filter(Boolean)
+      students.map((student) => getProfileData(student, 'department')).filter(Boolean)
     ),
   ];
 
