@@ -40,6 +40,7 @@ import FacultyProfileInfo from "./pages/Faculty/FacultyProfileInfo";
 import FetchStudentProfile from "./pages/Faculty/FetchStudentProfile";
 import StudentDashboard from "./pages/Faculty/StudentDashboard";
 import Settings from "./pages/Settings/Settings";
+import TYLScorecard from "./pages/Student/TYLScorecard";
 // TODO : Need to remove routing logic from app component
 function App() {
   const { user } = useContext(AuthContext);
@@ -300,6 +301,14 @@ function App() {
                     element={
                       <ProtectedRouteWrapper allowedRoles={["student"]}>
                         <LazyLoadWrapper component={StudentDashboard} />
+                      </ProtectedRouteWrapper>
+                    }
+                  />
+                  <Route
+                    path="/student/tyl-scorecard"
+                    element={
+                      <ProtectedRouteWrapper>
+                        <LazyLoadWrapper component={TYLScorecard} />
                       </ProtectedRouteWrapper>
                     }
                   />

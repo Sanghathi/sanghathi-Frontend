@@ -15,8 +15,8 @@ import {
   FormProvider,
   RHFTextField,
   RHFSelect,
-  RHFUploadAvatar,
 } from "../../components/hook-form";
+import RHFUploadAvatar from '../../components/RHFUploadAvatar';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 const yesNoOptions = [
@@ -43,21 +43,38 @@ const nationalityOptions = [
   "Foreigner"
 ];
 
-export default function StudentDetailsForm() {
+export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit }) {
   const [searchParams] = useSearchParams();
-  const menteeId = searchParams.get('menteeId');
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useContext(AuthContext);
-  console.log("User : ",user);
-  console.log("id: ",menteeId);
-  
   const [isDataFetched, setIsDataFetched] = useState(false);
-  const [setMentorName] = useState("Loading...");
 
   const methods = useForm({
     defaultValues: {
       studentProfile: {
-        photo:'',
+        photo: '',
+        fullName: {
+          firstName: '',
+          middleName: '',
+          lastName: ''
+        },
+        department: '',
+        sem: '',
+        personalEmail: '',
+        email: '',
+        usn: '',
+        dateOfBirth: '',
+        bloodGroup: '',
+        mobileNumber: '',
+        alternatePhoneNumber: '',
+        nationality: '',
+        domicile: '',
+        category: '',
+        caste: '',
+        aadharCardNumber: '',
+        admissionDate: '',
+        hostelite: '',
+        physicallyChallenged: ''
       }
     }
   });
@@ -111,11 +128,10 @@ export default function StudentDetailsForm() {
       "studentProfile.hostelite",
       "studentProfile.physicallyChallenged",
     ].indexOf(fieldName);
-    return (
-      watchedValues[fieldIndex] !== undefined &&
-      watchedValues[fieldIndex] !== "" &&
-      watchedValues[fieldIndex] !== null
-    );
+    
+    // Always return true to ensure inputs are always controlled
+    // This avoids the uncontrolled to controlled switch
+    return true;
   };
 
   const {
@@ -130,59 +146,83 @@ export default function StudentDetailsForm() {
   const fetchStudentData = useCallback(async () => {
     try {
       let response;
-      if(menteeId){
-        response = await api.get(`/students/profile/${menteeId}`);
+      if(menteeId) {
+        response = await api.get(`/student-profiles/${menteeId}`);
+      } else {
+        response = await api.get(`/student-profiles/${user._id}`);
       }
-      else
-      response = await api.get(`/students/profile/${user._id}`);
-    const { data } = response.data;
-    
-    if (data) {
-      //Formatting dates
-      data.studentProfile.dateOfBirth = new Date(data.studentProfile.dateOfBirth).toISOString().split('T')[0];
-      data.studentProfile.admissionDate = new Date(data.studentProfile.admissionDate).toISOString().split('T')[0];
       
-      Object.keys(data.studentProfile).forEach((key) => {
-        if (
-          data.studentProfile[key] &&
-          typeof data.studentProfile[key] === "object"
-        ) {
-          Object.keys(data.studentProfile[key]).forEach((innerKey) => {
-            setValue(
-              `studentProfile.${key}.${innerKey}`,
-              data.studentProfile[key][innerKey]
-            );
-          });
-        } else {
-          setValue(`studentProfile.${key}`, data.studentProfile[key]);
-        }
-      });
-      setIsDataFetched(true);
+      // Handle the response based on the structure returned by the backend
+      let studentData;
+      if (response.data.data) {
+        // If response has data.data structure
+        studentData = response.data.data;
+      } else {
+        // If response is directly the data object
+        studentData = { studentProfile: response.data };
+      }
+      
+      const data = studentData;
+      
+      if (data) {
+        //Formatting dates
+        data.studentProfile.dateOfBirth = data.studentProfile.dateOfBirth ? new Date(data.studentProfile.dateOfBirth).toISOString().split('T')[0] : '';
+        data.studentProfile.admissionDate = data.studentProfile.admissionDate ? new Date(data.studentProfile.admissionDate).toISOString().split('T')[0] : '';
+        
+        Object.keys(data.studentProfile).forEach((key) => {
+          if (
+            data.studentProfile[key] &&
+            typeof data.studentProfile[key] === "object"
+          ) {
+            Object.keys(data.studentProfile[key]).forEach((innerKey) => {
+              setValue(
+                `studentProfile.${key}.${innerKey}`,
+                data.studentProfile[key][innerKey]
+              );
+            });
+          } else {
+            setValue(`studentProfile.${key}`, data.studentProfile[key]);
+          }
+        });
+        setIsDataFetched(true);
+      }
+      console.log("Student data fetched successfully:", data);
+    } catch (error) {
+      console.error("Error fetching student data:", error.response || error);
     }
-    console.log("Student data fetched successfully:", data);
-  } catch (error) {
-    console.error("Error fetching student data:", error.response || error);
-  }
-}, [user._id, setValue]);
+  }, [user._id, setValue]);
 
-useEffect(() => {
-  fetchStudentData();
-}, [fetchStudentData]);
+  useEffect(() => {
+    fetchStudentData();
+  }, [fetchStudentData]);
 
-const handleReset = () => {
-  reset();
-  setIsDataFetched(false);
-};
+  const handleReset = () => {
+    reset();
+    setIsDataFetched(false);
+  };
 
   const onSubmit = useCallback(
     async (formData) => {
       try {
-        const photoData = formData.studentProfile.photo;
+        const userId = menteeId || user._id;
+        const photoUrl = formData.studentProfile.photo;
+        
+        // Check if the photo is a preview URL (starts with 'blob:')
+        const isPreviewUrl = photoUrl?.startsWith('blob:');
+        
+        if (isPreviewUrl) {
+          enqueueSnackbar("Please wait for the image to finish uploading", {
+            variant: "warning",
+          });
+          return;
+        }
+
         await api.post("/students/profile", {
-          userId: user._id,
+          userId: userId,
           ...formData.studentProfile,
-          photo: photoData,
+          photo: photoUrl,
         });
+        
         enqueueSnackbar("Student profile updated successfully!", {
           variant: "success",
         });
@@ -194,7 +234,7 @@ const handleReset = () => {
         });
       }
     },
-    [enqueueSnackbar, reset]
+    [enqueueSnackbar, menteeId, user._id, fetchStudentData]
   );
 
   const compressImage = (file, maxWidth = 800, maxHeight = 800, quality = 0.7) => {
@@ -272,28 +312,24 @@ return (
       <Grid container spacing={2}>
         <Grid item xs={12} md={4}>
           <Card sx={{ height: "100%", py: 10, px: 3, textAlign: "center" }}>
-          <RHFUploadAvatar
-            name="studentProfile.photo"
-            accept="image/*"
-            maxSize={3145728}
-            onDrop={handleDropAvatar}
-            file={watch('studentProfile.photoPreview')}
-            helperText={
-              <Box
-                component="span"
-                sx={{
-                  mt: 2,
-                  mx: "auto",
-                  display: "block",
-                  textAlign: "center",
-                  color: "text.secondary",
-                }}
-              >
-                Allowed *.jpeg, *.jpg, *.png, *.gif
-                <br /> max size of 3MB
-              </Box>
-            }
-          />
+            <RHFUploadAvatar
+              name="studentProfile.photo"
+              value={watch('studentProfile.photo')}
+              onChange={(url) => setValue('studentProfile.photo', url)}
+            />
+            <Box
+              component="span"
+              sx={{
+                mt: 2,
+                mx: "auto",
+                display: "block",
+                textAlign: "center",
+                color: "text.secondary",
+              }}
+            >
+              Allowed *.jpeg, *.jpg, *.png, *.gif
+              <br /> max size of 3MB
+            </Box>
           </Card>
         </Grid>
         <Grid item xs={12} md={8}>
@@ -331,8 +367,10 @@ return (
                 name="studentProfile.department"
                 label="Department"
                 fullWidth
-                required={!isDataFetched}
-                autoComplete="off"
+                disabled={!isAdminEdit}
+                InputProps={{
+                  readOnly: !isAdminEdit,
+                }}
                 InputLabelProps={{
                   shrink: shouldShrink("studentProfile.department"),
                 }}
@@ -390,8 +428,10 @@ return (
                   label="College Email"
                   type="email"
                   fullWidth
-                  required={!isDataFetched}
-                  autoComplete="email"
+                  disabled={!isAdminEdit}
+                  InputProps={{
+                    readOnly: !isAdminEdit,
+                  }}
                   InputLabelProps={{
                     shrink: shouldShrink("studentProfile.email"),
                   }}
@@ -402,8 +442,10 @@ return (
                   name="studentProfile.usn"
                   label="USN"
                   fullWidth
-                  required={!isDataFetched}
-                  autoComplete="off"
+                  disabled={!isAdminEdit}
+                  InputProps={{
+                    readOnly: !isAdminEdit,
+                  }}
                   InputLabelProps={{
                     shrink: shouldShrink("studentProfile.usn"),
                   }}
@@ -577,7 +619,7 @@ return (
                   variant="contained"
                   loading={isSubmitting}
                 >
-                  Save
+                  Save Changes
                 </LoadingButton>
               </Box>
             </Stack>

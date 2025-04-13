@@ -21,7 +21,7 @@ import Scrollbar from "../../components/Scrollbar";
 import MenuPopover from "../../components/MenuPopover";
 import IconButtonAnimate from "../../components/animate/IconButtonAnimate";
 
-import useUnreadNotifications from "../../hooks/useNotifications";
+import { useUnreadNotifications } from "../../hooks/useNotifications";
 
 // ----------------------------------------------------------------------
 

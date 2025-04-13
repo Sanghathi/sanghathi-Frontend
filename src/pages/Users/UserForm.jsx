@@ -35,7 +35,7 @@ const getUserSchema = (editingUser) => {
     phone: Yup.string().required("Phone is required"),
     department: Yup.string().required("Department is required"),
     sem: Yup.string(),
-    usn: Yup.string(),
+    usn: Yup.string().transform((value) => value.toUpperCase()),
     role: Yup.string().required("Role is required"),
   };
 
@@ -63,6 +63,20 @@ const options = [
   // { label: "HOD", value: "hod" },
 ];
 
+const departmentOptions = [
+  "CSE",
+  "ISE",
+  "AIML",
+  "CSE(AIML)",
+  "AIDS",
+  "CS(DS)",
+  "ECE",
+  "MBA",
+  "MCA"
+];
+
+const semesterOptions = Array.from({ length: 8 }, (_, i) => i + 1);
+
 export default function UserForm({ editingUser }) {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
@@ -87,34 +101,23 @@ export default function UserForm({ editingUser }) {
 
   const { setValue, handleSubmit, reset, formState: { isSubmitting } } = methods;
 
-  // Fetch roleId based on role selection
-  useEffect(() => {
-    const fetchRoleId = async () => {
-      try {
-        const selectedRole = methods.watch("role"); // Watch for role changes
-      if (!selectedRole) return;
-        const { data } = await api.get(`/roles/${methods.getValues("role")}`);
-        setRoleId(data._id);  // Save the role ObjectId
-      } catch (error) {
-        console.error("Failed to fetch role ID", error);
-      }
-    };
-    if (methods.getValues("role")) {
-      fetchRoleId();
-    }
-  }, [methods.watch("role")]);
+  // Remove the role ID fetching effect
+  // useEffect(() => {
+  //   const fetchRoleId = async () => {
+  //     try {
+  //       const response = await api.get(`/roles/${methods.getValues("role")}`);
+  //       setRoleId(response.data.id);
+  //     } catch (error) {
+  //       console.error("Failed to fetch role ID:", error);
+  //     }
+  //   };
+  //   fetchRoleId();
+  // }, [methods]);
 
   //handle form submission
   const onSubmit = useCallback(
       async (formData) => {
         console.log("Form data:", formData);
-        if (!roleId) {
-          enqueueSnackbar("Role must be selected!", { variant: "error" });
-          return; // Prevent submission if roleId is empty
-        }
-    
-        console.log("Selected Role ID:", roleId); 
-    
         try {
           // Split the name into first and last name
           const nameParts = formData.name.split(' ');
@@ -129,8 +132,7 @@ export default function UserForm({ editingUser }) {
             password: formData.password,
             passwordConfirm: formData.passwordConfirm,
             avatar,
-            role: roleId,
-            roleName: formData.role,
+            roleName: formData.role, // Use roleName instead of role ID
           };
     
           console.log('Creating user with data:', userData);  
@@ -170,6 +172,20 @@ export default function UserForm({ editingUser }) {
                 await api.patch(`/users/${userResponse.data._id}`, {
                   profileId: profileId,
                 });
+                
+                // Fetch the newly created student profile to verify it's there
+                try {
+                  const fetchResponse = await api.get(`/student-profiles/${userResponse.data._id}`);
+                  console.log('Fetched student profile:', fetchResponse.data);
+                  
+                  if (!fetchResponse.data) {
+                    console.warn('Student profile response is empty');
+                    enqueueSnackbar("User created, but profile may not be accessible immediately. Please refresh.", { variant: "warning" });
+                  }
+                } catch (fetchError) {
+                  console.error('Error fetching new student profile:', fetchError);
+                  enqueueSnackbar("User created, but profile may not be accessible immediately. Please refresh.", { variant: "warning" });
+                }
               }
             }
             else{
@@ -214,7 +230,7 @@ export default function UserForm({ editingUser }) {
                 { variant: "error" }
               );
           }
-    },[methods, roleId, avatar, reset, enqueueSnackbar]
+    },[methods, avatar, reset, enqueueSnackbar]
   );
 
   // Handle avatar drop
@@ -332,12 +348,12 @@ export default function UserForm({ editingUser }) {
                   Academic Information
                 </Typography>
                 
-                <RHFTextField
-                  name="department"
-                  label="Department"
-                  required
-                  fullWidth
-                />
+                <RHFSelect name="department" label="Department" required fullWidth>
+                  <option value="">Select Department</option>
+                  {departmentOptions.map((dept) => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </RHFSelect>
                 
                 <Box
                   sx={{
@@ -347,7 +363,12 @@ export default function UserForm({ editingUser }) {
                     gridTemplateColumns: { xs: "repeat(1, 1fr)", sm: "repeat(2, 1fr)" },
                   }}
                 >
-                  <RHFTextField name="sem" label="Semester" fullWidth />
+                  <RHFSelect name="sem" label="Semester" fullWidth>
+                    <option value="">Select Semester</option>
+                    {semesterOptions.map((sem) => (
+                      <option key={sem} value={sem.toString()}>{sem}</option>
+                    ))}
+                  </RHFSelect>
                   <RHFTextField name="usn" label="USN" fullWidth />
                 </Box>
                 

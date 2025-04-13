@@ -42,7 +42,7 @@ const Login = () => {
     setIsAdminDemoChecked(event.target.checked);
     if (event.target.checked) {
       email.current.value = "ghost@ex.com";
-      password.current.value = "ghost1234";
+      password.current.value = "ghost12345";
       setIsStudentDemoChecked(false);
       setIsFacultyDemoChecked(false);
     } else {
@@ -139,12 +139,12 @@ const Login = () => {
                 mx="auto"
               >
                 <Stack spacing={3} mb={3}>
-                  <Box display="flex" justifyContent="center">
+                  <Box display="flex" justifyContent="center" mb={4}>
                     <img
                       src={logo}
                       alt="Logo"
                       style={{
-                        width: "70px",
+                        width: "120px",
                         filter: "none"
                       }}
                     />
@@ -183,14 +183,14 @@ const Login = () => {
                           name="adminDemo"
                         />
                       }
-                      label="Admin Demo"
+                      label="Admin"
                     />
                     <FormControlLabel
                       control={
                         <Radio
                           checked={isFacultyDemoChecked}
                           onChange={handleFacultyDemoChange}
-                          name="facultyDemo"
+                          name="faculty"
                         />
                       }
                       label="Faculty Demo"
@@ -203,7 +203,7 @@ const Login = () => {
                           name="studentDemo"
                         />
                       }
-                      label="Student Demo"
+                      label="Student"
                     />
                   </Stack>
 

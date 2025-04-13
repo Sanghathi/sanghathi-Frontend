@@ -1,8 +1,9 @@
 import { capitalCase } from "change-case";
 import { AuthContext } from "../../context/AuthContext";
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 // @mui
 import { Container, Tab, Box, Tabs, useTheme } from "@mui/material";
+import { useLocation } from "react-router-dom";
 // routes
 
 // hooks
@@ -29,14 +30,21 @@ import PrevAcademic from "./PrevAcademic";
 export default function StudentProfile() {
   const { currentTab, onChangeTab } = useTabs("Student Details");
   const theme = useTheme();
+  const location = useLocation();
   const isLight = theme.palette.mode === 'light';
   const colorMode = isLight ? 'primary' : 'info';
   
-  const ACCOUNT_TABS = [
+  // Check if we're in admin edit mode
+  const searchParams = new URLSearchParams(location.search);
+  const isAdminEdit = searchParams.get('adminEdit') === 'true';
+  const menteeId = searchParams.get('menteeId');
+
+  // Define all available tabs
+  const ALL_TABS = [
     {
       value: "Student Details",
       icon: <Iconify icon={"ic:round-account-box"} width={20} height={20} />,
-      component: <StudentDetailsForm colorMode={colorMode} />,
+      component: <StudentDetailsForm colorMode={colorMode} menteeId={menteeId} isAdminEdit={isAdminEdit} />,
     },
     {
       value: "Parent Details",
@@ -64,6 +72,9 @@ export default function StudentProfile() {
       component: <AdmissionDetails colorMode={colorMode} />,
     },
   ];
+
+  // Use only student details tab for admin edit mode, all tabs for regular student view
+  const ACCOUNT_TABS = isAdminEdit ? [ALL_TABS[0]] : ALL_TABS;
 
   return (
     <Page title="Student Profile">
