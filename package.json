@@ -36,6 +36,7 @@
     "numeral": "^2.0.6",
     "papaparse": "^5.5.2",
     "react": "latest",
+    "react-chatbotify": "^2.0.0-beta.33",
     "react-dom": "latest",
     "react-dropzone": "^12.0.4",
     "react-helmet-async": "^1.2.3",
