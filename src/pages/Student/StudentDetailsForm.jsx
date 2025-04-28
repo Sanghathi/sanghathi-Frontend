@@ -53,8 +53,6 @@ const getCloudinaryPublicId = (url) => {
   if (!url || !url.includes('cloudinary.com')) return null;
   
   try {
-    // Extract everything after '/upload/'
-    // Example URL: https://res.cloudinary.com/dc5xtrpnm/image/upload/v1745834966/profile-images/ocx5iziycwdfoofdnabd.jpg
     const matches = url.match(/\/upload\/(?:v\d+\/)?(.+)$/);
     if (!matches) return null;
     
@@ -279,9 +277,9 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
         
         try {
           // Compress/resize the image before converting to base64
-          console.log("Starting image compression...");
+          // console.log("Starting image compression...");
           const compressedBase64 = await compressImage(file, 800, 800, 0.7);
-          console.log("Image compressed successfully");
+          // console.log("Image compressed successfully");
           
           // Store the compressed base64 string directly without uploading to Cloudinary
           setValue('studentProfile.photo', compressedBase64);
@@ -289,7 +287,7 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
           // Create a preview URL for display
           const previewUrl = URL.createObjectURL(file);
           setValue('studentProfile.photoPreview', previewUrl);
-          console.log("Form values updated with new image");
+          // console.log("Form values updated with new image");
           
           // Force a re-render if needed
           trigger('studentProfile.photo');
@@ -304,99 +302,113 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
 
   const onSubmit = async (data) => {
     try {
-      // Get the current photo value from the form
       const currentPhoto = watch('studentProfile.photo');
-      console.log('[StudentDetailsForm] Current photo value:', {
-        type: typeof currentPhoto,
-        isBase64: currentPhoto?.includes('data:image'),
-        isCloudinary: currentPhoto?.includes('cloudinary.com'),
-        preview: currentPhoto?.substring(0, 100)
-      });
-      
-      // Initialize photoUrl
       let photoUrl = currentPhoto;
-
-      // Only upload if it's a new base64 image and not already a Cloudinary URL
+  
+      // console.log('[Image Upload] Starting submission process');
+      // console.log('[Image Upload] Current photo type:', typeof currentPhoto);
+      // console.log('[Image Upload] Is data:image?', currentPhoto?.substring(0, 20));
+      // console.log('[Image Upload] Is Cloudinary URL?', isCloudinaryUrl(currentPhoto));
+  
+      // If uploading a new image (base64)
       if (typeof currentPhoto === 'string' && 
           currentPhoto.includes('data:image') && 
           !isCloudinaryUrl(currentPhoto)) {
+        
+        // Get the current stored profile from the database to check for existing Cloudinary image
         try {
-          // If there's an existing Cloudinary image, delete it first
-          const existingPhoto = data.studentProfile.photo;
-          if (isCloudinaryUrl(existingPhoto)) {
-            const publicId = getCloudinaryPublicId(existingPhoto);
+          // console.log('[Image Delete] Fetching current profile data');
+          const currentProfileResponse = await api.get(`students/profile/${menteeId || user._id}`);
+          const currentStoredPhotoUrl = currentProfileResponse.data?.data?.studentProfile?.photo;
+          
+          console.log('[Image Delete] Current stored photo URL:', {
+            exists: !!currentStoredPhotoUrl,
+            isCloudinary: isCloudinaryUrl(currentStoredPhotoUrl),
+            url: currentStoredPhotoUrl?.substring(0, 100)
+          });
+  
+          // Delete the existing Cloudinary image if it exists
+          if (isCloudinaryUrl(currentStoredPhotoUrl)) {
+            const publicId = getCloudinaryPublicId(currentStoredPhotoUrl);
+            console.log('[Image Delete] Extracted public ID:', publicId);
+  
             if (publicId) {
-              console.log('[StudentDetailsForm] Attempting to delete image with public ID:', publicId);
               try {
-                await api.delete(`v1/upload/profile-image/${encodeURIComponent(publicId)}`);
-                console.log('[StudentDetailsForm] Previous image deleted successfully');
+                // console.log('[Image Delete] Attempting to delete image with public ID:', publicId);
+                const deleteResponse = await api.delete(`v1/upload/profile-image/${encodeURIComponent(publicId)}`);
+                // console.log('[Image Delete] Delete response:', deleteResponse.data);
               } catch (deleteError) {
-                if (deleteError.response?.status === 404) {
-                  console.log('[StudentDetailsForm] Image not found, might have been deleted already');
-                } else {
-                  console.error('[StudentDetailsForm] Error deleting previous image:', deleteError);
-                }
+                console.error('[Image Delete] Error deleting image:', {
+                  status: deleteError.response?.status,
+                  message: deleteError.response?.data?.message || deleteError.message,
+                  publicId
+                });
                 // Continue with upload even if delete fails
               }
             }
           }
-
-          console.log('[StudentDetailsForm] Uploading new image to Cloudinary...');
+        } catch (fetchError) {
+          console.error('[Image Delete] Error fetching current profile:', {
+            status: fetchError.response?.status,
+            message: fetchError.response?.data?.message || fetchError.message
+          });
+          // Continue with upload even if fetch fails
+        }
+  
+        // Then upload the new image
+        try {
+          console.log('[Image Upload] Starting new image upload');
           const uploadResponse = await api.post('v1/upload/profile-image', {
             image: currentPhoto
           });
           
-          console.log('[StudentDetailsForm] Upload response:', {
+          console.log('[Image Upload] Upload response:', {
             status: uploadResponse.status,
-            statusText: uploadResponse.statusText,
-            data: uploadResponse.data
+            imageUrl: uploadResponse.data?.data?.imageUrl || uploadResponse.data?.imageUrl
           });
-          
-          // Check for imageUrl in the correct location
+  
           const cloudinaryUrl = uploadResponse.data?.data?.imageUrl || uploadResponse.data?.imageUrl;
           if (!cloudinaryUrl) {
-            console.error('[StudentDetailsForm] Invalid upload response - no imageUrl found:', uploadResponse);
             throw new Error('No image URL received from server');
           }
           
           photoUrl = cloudinaryUrl;
-          console.log('[StudentDetailsForm] Received Cloudinary URL:', photoUrl);
-        } catch (error) {
-          console.error('[StudentDetailsForm] Error uploading photo:', {
-            message: error.message,
-            response: error.response,
-            stack: error.stack
+          console.log('[Image Upload] New image URL:', photoUrl.substring(0, 100));
+        } catch (uploadError) {
+          console.error('[Image Upload] Error uploading new image:', {
+            status: uploadError.response?.status,
+            message: uploadError.response?.data?.message || uploadError.message
           });
-          enqueueSnackbar(error.response?.data?.message || 'Failed to upload photo', { variant: 'error' });
+          enqueueSnackbar('Failed to upload new photo', { variant: 'error' });
           return;
         }
       }
-
-      // Prepare the update data with the final photo URL
+  
+      // Continue with profile update using the new photo URL
       const updateData = {
         userId: menteeId || user._id,
         ...data.studentProfile,
         photo: photoUrl
       };
-
+  
       console.log('[StudentDetailsForm] Sending profile update:', {
         userId: updateData.userId,
         photo: updateData.photo?.substring(0, 100),
         department: updateData.department,
         sem: updateData.sem
       });
-
+  
       // Update profile with the photo URL
       try {
         console.log('[StudentDetailsForm] Making API call to students/profile');
         const response = await api.post('students/profile', updateData);
-
+  
         console.log('[StudentDetailsForm] Profile update response:', {
           status: response.status,
           statusText: response.statusText,
           data: response.data
         });
-
+  
         if (response.data.status === "success") {
           console.log('[StudentDetailsForm] Profile update successful:', response.data);
           enqueueSnackbar("Profile updated successfully", { variant: "success" });
@@ -420,11 +432,7 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
         throw error;
       }
     } catch (error) {
-      console.error("[StudentDetailsForm] Error in form submission:", {
-        message: error.message,
-        response: error.response,
-        stack: error.stack
-      });
+      console.error("[StudentDetailsForm] Error in form submission:", error);
       enqueueSnackbar(error.response?.data?.message || "Error updating profile", {
         variant: "error",
       });
