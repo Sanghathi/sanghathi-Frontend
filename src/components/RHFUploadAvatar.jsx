@@ -1,32 +1,28 @@
 import { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Box, Typography, Avatar, CircularProgress } from '@mui/material';
+import { Box, Typography, Avatar } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import axios from 'axios';
-
-// Backend API configuration
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export default function RHFUploadAvatar({ name, value, onChange, ...other }) {
   const { enqueueSnackbar } = useSnackbar();
-  const [isUploading, setIsUploading] = useState(false);
-  const [preview, setPreview] = useState(value);
+  const [preview, setPreview] = useState(null);
 
   useEffect(() => {
     // Update preview when value changes
     if (value) {
+      // If it's a base64 string or Cloudinary URL, use it directly
       setPreview(value);
     }
   }, [value]);
 
   const validateFile = (file) => {
-    // Check file size (3MB max)
+    if (!file) return false;
+
     if (file.size > 3 * 1024 * 1024) {
       enqueueSnackbar('File size is too large. Maximum size is 3MB', { variant: 'error' });
       return false;
     }
     
-    // Check file type
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
     if (!validTypes.includes(file.type)) {
       enqueueSnackbar('Invalid file type. Only JPEG, PNG, and GIF are allowed', { variant: 'error' });
@@ -37,57 +33,50 @@ export default function RHFUploadAvatar({ name, value, onChange, ...other }) {
   };
 
   const onDrop = useCallback(async (acceptedFiles) => {
-    console.log('Files dropped:', acceptedFiles);
-    if (acceptedFiles.length === 0) {
+    if (!acceptedFiles || acceptedFiles.length === 0) {
       console.log('No files accepted');
       return;
     }
     
     const file = acceptedFiles[0];
-    console.log('File to upload:', file.name, file.size, file.type);
     
     if (!validateFile(file)) {
       return;
     }
 
     try {
-      // Show preview immediately
+      // Create a preview URL for display
       const previewUrl = URL.createObjectURL(file);
-      console.log('Preview URL created:', previewUrl);
       setPreview(previewUrl);
       
-      // Start upload
-      setIsUploading(true);
+      // Convert file to base64
+      const reader = new FileReader();
       
-      // Use backend API for upload
-      console.log('Uploading via backend API...');
-      
-      const formData = new FormData();
-      formData.append('image', file);
-      
-      // Upload to backend API
-      const response = await axios.post(`${API_URL}/v1/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
+      reader.onload = async () => {
+        try {
+          const base64Data = reader.result;
+          // Just pass the base64 data to parent component
+          onChange(base64Data);
+        } catch (error) {
+          console.error('Error processing file:', error);
+          enqueueSnackbar('Failed to process image', { variant: 'error' });
         }
-      });
-      
-      console.log('Upload response:', response.data);
-      
-      // Update with the image URL from response
-      setIsUploading(false);
-      onChange(response.data.imageUrl);
-      enqueueSnackbar('Image uploaded successfully', { variant: 'success' });
+      };
+
+      reader.onerror = () => {
+        enqueueSnackbar('Failed to read file', { variant: 'error' });
+      };
+
+      reader.readAsDataURL(file);
     } catch (error) {
-      console.error('Upload error:', error);
-      setIsUploading(false);
-      enqueueSnackbar('Failed to upload image: ' + (error.response?.data?.message || error.message || 'Unknown error'), { variant: 'error' });
+      console.error('Error processing file:', error);
+      enqueueSnackbar('Failed to process image', { variant: 'error' });
     }
   }, [onChange, enqueueSnackbar]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: 'image/jpeg,image/jpg,image/png,image/gif',
+    accept: 'image/jpeg, image/jpg, image/png, image/gif',
     maxFiles: 1,
     maxSize: 3 * 1024 * 1024 // 3MB
   });
@@ -96,40 +85,21 @@ export default function RHFUploadAvatar({ name, value, onChange, ...other }) {
     <Box
       {...getRootProps()}
       sx={{
-        width: 128,
-        height: 128,
+        width: 144,
+        height: 144,
         margin: 'auto',
         borderRadius: '50%',
-        padding: 1,
+        padding: 0.5,
         border: '1px dashed rgba(145, 158, 171, 0.32)',
         ...(isDragActive && {
           opacity: 0.72,
           backgroundColor: 'action.hover'
         }),
-        position: 'relative'
+        position: 'relative',
+        cursor: 'pointer'
       }}
     >
       <input {...getInputProps()} />
-      
-      {isUploading && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            borderRadius: '50%',
-            zIndex: 1
-          }}
-        >
-          <CircularProgress color="primary" size={40} />
-        </Box>
-      )}
       
       {preview ? (
         <Avatar
@@ -152,8 +122,8 @@ export default function RHFUploadAvatar({ name, value, onChange, ...other }) {
             backgroundColor: 'background.neutral'
           }}
         >
-          <Typography variant="body2" align="center">
-            {isDragActive ? 'Drop image here' : 'Drag & drop or click to upload'}
+          <Typography variant="caption" align="center" sx={{ p: 1 }}>
+            {isDragActive ? 'Drop image here' : 'Upload\nPhoto'}
           </Typography>
         </Box>
       )}

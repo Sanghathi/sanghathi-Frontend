@@ -7,7 +7,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { AuthContext } from "../../context/AuthContext";
 
 // @mui
-import { Box, Grid, Card, Stack, Avatar, CircularProgress } from "@mui/material";
+import { Box, Grid, Card, Stack, Avatar, CircularProgress, Typography } from "@mui/material";
 import { LoadingButton } from "@mui/lab";
 import { useTheme } from "@mui/material/styles";
 
@@ -44,6 +44,29 @@ const nationalityOptions = [
   "Indian",
   "Foreigner"
 ];
+
+const isCloudinaryUrl = (url) => {
+  return typeof url === 'string' && url.includes('cloudinary.com');
+};
+
+const getCloudinaryPublicId = (url) => {
+  if (!url || !url.includes('cloudinary.com')) return null;
+  
+  try {
+    // Extract everything after '/upload/'
+    // Example URL: https://res.cloudinary.com/dc5xtrpnm/image/upload/v1745834966/profile-images/ocx5iziycwdfoofdnabd.jpg
+    const matches = url.match(/\/upload\/(?:v\d+\/)?(.+)$/);
+    if (!matches) return null;
+    
+    // Get the full path including folders but remove the file extension
+    const fullPath = matches[1].replace(/\.[^/.]+$/, '');
+    console.log('[getCloudinaryPublicId] Extracted public ID:', fullPath);
+    return fullPath;
+  } catch (error) {
+    console.error('[getCloudinaryPublicId] Error extracting public ID:', error);
+    return null;
+  }
+};
 
 export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit }) {
   const [searchParams] = useSearchParams();
@@ -150,9 +173,9 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
     try {
       let response;
       if(menteeId) {
-        response = await api.get(`/student-profiles/${menteeId}`);
+        response = await api.get(`student-profiles/${menteeId}`);
       } else {
-        response = await api.get(`/student-profiles/${user._id}`);
+        response = await api.get(`student-profiles/${user._id}`);
       }
       
       // Handle the response based on the structure returned by the backend
@@ -189,11 +212,11 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
         });
         setIsDataFetched(true);
       }
-      console.log("Student data fetched successfully:", data);
+      console.log("[StudentDetailsForm] Student data fetched successfully:", data);
     } catch (error) {
-      console.error("Error fetching student data:", error.response || error);
+      console.error("[StudentDetailsForm] Error fetching student data:", error.response || error);
     }
-  }, [user._id, setValue]);
+  }, [user._id, setValue, menteeId]);
 
   useEffect(() => {
     fetchStudentData();
@@ -203,42 +226,6 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
     reset();
     setIsDataFetched(false);
   };
-
-  const onSubmit = useCallback(
-    async (formData) => {
-      try {
-        const userId = menteeId || user._id;
-        const photoUrl = formData.studentProfile.photo;
-        
-        // Check if the photo is a preview URL (starts with 'blob:')
-        const isPreviewUrl = photoUrl?.startsWith('blob:');
-        
-        if (isPreviewUrl) {
-          enqueueSnackbar("Please wait for the image to finish uploading", {
-            variant: "warning",
-          });
-          return;
-        }
-
-        await api.post("/students/profile", {
-          userId: userId,
-          ...formData.studentProfile,
-          photo: photoUrl,
-        });
-        
-        enqueueSnackbar("Student profile updated successfully!", {
-          variant: "success",
-        });
-        await fetchStudentData();
-      } catch (error) {
-        console.error(error);
-        enqueueSnackbar("An error occurred while processing the request", {
-          variant: "error",
-        });
-      }
-    },
-    [enqueueSnackbar, menteeId, user._id, fetchStudentData]
-  );
 
   const compressImage = (file, maxWidth = 800, maxHeight = 800, quality = 0.7) => {
     return new Promise((resolve) => {
@@ -284,19 +271,25 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
       const file = acceptedFiles[0];
       
       if (file) {
-        console.log("File received:", file);
+        console.log("File received:", {
+          name: file.name,
+          type: file.type,
+          size: file.size
+        });
         
         try {
           // Compress/resize the image before converting to base64
+          console.log("Starting image compression...");
           const compressedBase64 = await compressImage(file, 800, 800, 0.7);
-          console.log("Image compressed and converted to base64");
+          console.log("Image compressed successfully");
+          
+          // Store the compressed base64 string directly without uploading to Cloudinary
+          setValue('studentProfile.photo', compressedBase64);
           
           // Create a preview URL for display
           const previewUrl = URL.createObjectURL(file);
-          
-          // Update form with both the compressed base64 string and preview URL
-          setValue('studentProfile.photo', compressedBase64);
           setValue('studentProfile.photoPreview', previewUrl);
+          console.log("Form values updated with new image");
           
           // Force a re-render if needed
           trigger('studentProfile.photo');
@@ -308,9 +301,134 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
     },
     [setValue, trigger, enqueueSnackbar]
   );
-  
-  const isCloudinaryUrl = (url) => {
-    return typeof url === 'string' && url.includes('cloudinary.com');
+
+  const onSubmit = async (data) => {
+    try {
+      // Get the current photo value from the form
+      const currentPhoto = watch('studentProfile.photo');
+      console.log('[StudentDetailsForm] Current photo value:', {
+        type: typeof currentPhoto,
+        isBase64: currentPhoto?.includes('data:image'),
+        isCloudinary: currentPhoto?.includes('cloudinary.com'),
+        preview: currentPhoto?.substring(0, 100)
+      });
+      
+      // Initialize photoUrl
+      let photoUrl = currentPhoto;
+
+      // Only upload if it's a new base64 image and not already a Cloudinary URL
+      if (typeof currentPhoto === 'string' && 
+          currentPhoto.includes('data:image') && 
+          !isCloudinaryUrl(currentPhoto)) {
+        try {
+          // If there's an existing Cloudinary image, delete it first
+          const existingPhoto = data.studentProfile.photo;
+          if (isCloudinaryUrl(existingPhoto)) {
+            const publicId = getCloudinaryPublicId(existingPhoto);
+            if (publicId) {
+              console.log('[StudentDetailsForm] Attempting to delete image with public ID:', publicId);
+              try {
+                await api.delete(`v1/upload/profile-image/${encodeURIComponent(publicId)}`);
+                console.log('[StudentDetailsForm] Previous image deleted successfully');
+              } catch (deleteError) {
+                if (deleteError.response?.status === 404) {
+                  console.log('[StudentDetailsForm] Image not found, might have been deleted already');
+                } else {
+                  console.error('[StudentDetailsForm] Error deleting previous image:', deleteError);
+                }
+                // Continue with upload even if delete fails
+              }
+            }
+          }
+
+          console.log('[StudentDetailsForm] Uploading new image to Cloudinary...');
+          const uploadResponse = await api.post('v1/upload/profile-image', {
+            image: currentPhoto
+          });
+          
+          console.log('[StudentDetailsForm] Upload response:', {
+            status: uploadResponse.status,
+            statusText: uploadResponse.statusText,
+            data: uploadResponse.data
+          });
+          
+          // Check for imageUrl in the correct location
+          const cloudinaryUrl = uploadResponse.data?.data?.imageUrl || uploadResponse.data?.imageUrl;
+          if (!cloudinaryUrl) {
+            console.error('[StudentDetailsForm] Invalid upload response - no imageUrl found:', uploadResponse);
+            throw new Error('No image URL received from server');
+          }
+          
+          photoUrl = cloudinaryUrl;
+          console.log('[StudentDetailsForm] Received Cloudinary URL:', photoUrl);
+        } catch (error) {
+          console.error('[StudentDetailsForm] Error uploading photo:', {
+            message: error.message,
+            response: error.response,
+            stack: error.stack
+          });
+          enqueueSnackbar(error.response?.data?.message || 'Failed to upload photo', { variant: 'error' });
+          return;
+        }
+      }
+
+      // Prepare the update data with the final photo URL
+      const updateData = {
+        userId: menteeId || user._id,
+        ...data.studentProfile,
+        photo: photoUrl
+      };
+
+      console.log('[StudentDetailsForm] Sending profile update:', {
+        userId: updateData.userId,
+        photo: updateData.photo?.substring(0, 100),
+        department: updateData.department,
+        sem: updateData.sem
+      });
+
+      // Update profile with the photo URL
+      try {
+        console.log('[StudentDetailsForm] Making API call to students/profile');
+        const response = await api.post('students/profile', updateData);
+
+        console.log('[StudentDetailsForm] Profile update response:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: response.data
+        });
+
+        if (response.data.status === "success") {
+          console.log('[StudentDetailsForm] Profile update successful:', response.data);
+          enqueueSnackbar("Profile updated successfully", { variant: "success" });
+          await fetchStudentData(); // Refresh the data
+          
+          // Verify the photo URL was saved correctly
+          console.log('[StudentDetailsForm] Verifying saved photo URL:', {
+            savedUrl: response.data?.data?.studentProfile?.photo,
+            originalUrl: photoUrl
+          });
+        } else {
+          console.error('[StudentDetailsForm] Profile update failed:', response.data);
+          throw new Error('Profile update failed');
+        }
+      } catch (error) {
+        console.error('[StudentDetailsForm] Error in profile update API call:', {
+          message: error.message,
+          response: error.response,
+          stack: error.stack
+        });
+        throw error;
+      }
+    } catch (error) {
+      console.error("[StudentDetailsForm] Error in form submission:", {
+        message: error.message,
+        response: error.response,
+        stack: error.stack
+      });
+      enqueueSnackbar(error.response?.data?.message || "Error updating profile", {
+        variant: "error",
+      });
+    }
   };
 
   return (
@@ -318,70 +436,20 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
       <Grid container spacing={2}>
         <Grid item xs={12} md={4}>
           <Card sx={{ height: "100%", py: 10, px: 3, textAlign: "center" }}>
-            {isCloudinaryUrl(watch('studentProfile.photo')) ? (
-              <>
-                <Box sx={{ mb: 5, mx: 'auto', width: 144, height: 144, position: 'relative' }}>
-                  <CloudinaryImage
-                    publicId={watch('studentProfile.photo')}
-                    alt="Student Avatar"
-                    width="144"
-                    height="144"
-                    crop="fill"
-                    gravity="face"
-                    radius="max"
-                    style={{ width: '100%', height: '100%', borderRadius: '50%' }}
-                  />
-                </Box>
-                <RHFUploadAvatar
-                  name="studentProfile.photo"
-                  accept="image/*"
-                  maxSize={3145728}
-                  onDrop={handleDropAvatar}
-                  helperText={
-                    <Box
-                      component="span"
-                      sx={{
-                        mt: 2,
-                        mx: "auto",
-                        display: "block",
-                        textAlign: "center",
-                        color: "text.secondary",
-                      }}
-                    >
-                      Allowed *.jpeg, *.jpg, *.png, *.gif
-                      <br /> max size of 3MB
-                    </Box>
-                  }
-                />
-              </>
-            ) : (
-              <RHFUploadAvatar
-                name="studentProfile.photo"
-                accept="image/*"
-                maxSize={3145728}
-                onDrop={handleDropAvatar}
-                helperText={
-                  <Box
-                    component="span"
-                    sx={{
-                      mt: 2,
-                      mx: "auto",
-                      display: "block",
-                      textAlign: "center",
-                      color: "text.secondary",
-                    }}
-                  >
-                    Allowed *.jpeg, *.jpg, *.png, *.gif
-                    <br /> max size of 3MB
-                  </Box>
-                }
-              />
-            )}
+            <RHFUploadAvatar
+              name="studentProfile.photo"
+              value={watch('studentProfile.photo')}
+              onChange={(url) => setValue('studentProfile.photo', url)}
+            />
+            <Typography variant="caption" sx={{ mt: 2, display: 'block', color: 'text.secondary' }}>
+              Allowed formats: JPG, PNG, GIF. Max size: 3MB
+            </Typography>
           </Card>
         </Grid>
+
         <Grid item xs={12} md={8}>
           <Card sx={{ p: 3 }}>
-            <Stack spacing={3} sx={{ mt: 3 }}>
+            <Stack spacing={3}>
               <RHFTextField
                 name="studentProfile.fullName.firstName"
                 label="First Name"
@@ -405,6 +473,7 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
                 name="studentProfile.fullName.lastName"
                 label="Last Name"
                 fullWidth
+                required={!isDataFetched}
                 autoComplete="family-name"
                 InputLabelProps={{
                   shrink: shouldShrink("studentProfile.fullName.lastName"),
@@ -433,8 +502,9 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
                 label="Semester"
                 fullWidth
                 required={!isDataFetched}
-                autoComplete="off"
-                InputLabelProps={{ shrink: shouldShrink("studentProfile.sem") }}
+                InputLabelProps={{
+                  shrink: shouldShrink("studentProfile.sem"),
+                }}
               >
                 {semesterOptions.map((sem) => (
                   <option key={sem} value={sem}>
@@ -453,20 +523,11 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
                   shrink: shouldShrink("studentProfile.personalEmail"),
                 }}
               />
-
-              {/* <RHFTextField
-                name="mentor.name"
-                label="Mentor Name"
-                fullWidth
-                
-                value={mentorName} 
-                InputLabelProps={{ shrink: true }}
-              /> */}
             </Stack>
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={12}>
+        <Grid item xs={12}>
           <Card sx={{ p: 3 }}>
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
@@ -621,39 +682,44 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
                   }}
                 />
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={6}>
                 <RHFSelect
                   name="studentProfile.hostelite"
                   label="Hostelite"
                   fullWidth
-                  autoComplete="off"
                   required={!isDataFetched}
+                  autoComplete="off"
                   InputLabelProps={{
                     shrink: true,
                   }}
                 >
                   {yesNoOptions.map((option) => (
-                    <option key={option.value}>{option.label}</option>
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
                   ))}
                 </RHFSelect>
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={6}>
                 <RHFSelect
                   name="studentProfile.physicallyChallenged"
                   label="Physically Challenged"
-                  autoComplete="off"
                   fullWidth
                   required={!isDataFetched}
+                  autoComplete="off"
                   InputLabelProps={{
                     shrink: true,
                   }}
                 >
                   {yesNoOptions.map((option) => (
-                    <option key={option.value}>{option.label}</option>
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
                   ))}
                 </RHFSelect>
               </Grid>
             </Grid>
+
             <Stack spacing={3} alignItems="flex-end" sx={{ mt: 3 }}>
               <Box display="flex" gap={1}>
                 {import.meta.env.MODE === "development" && (
