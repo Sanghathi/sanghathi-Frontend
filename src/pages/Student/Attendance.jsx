@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext } from "react";
+import { useSearchParams } from 'react-router-dom';
 import {
   Box,
   Table,
@@ -16,7 +17,8 @@ import { AuthContext } from "../../context/AuthContext";
 const BASE_URL = import.meta.env.VITE_API_URL;
 const Attendance = () => {
   const { user } = useContext(AuthContext);
-  const [attendanceData, setAttendanceData] = useState([]); // Store the *nested* data
+  const [searchParams] = useSearchParams();
+  const [attendanceData, setAttendanceData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedSemester, setSelectedSemester] = useState(null); // Initialize to null
@@ -25,31 +27,36 @@ const Attendance = () => {
   useEffect(() => {
     const fetchAttendance = async () => {
       try {
+        // Get menteeId from URL params if viewing as faculty
+        const menteeId = searchParams.get('menteeId') || user._id;
+        
+        console.log("Fetching attendance for ID:", menteeId); // Debug log
+        
         const response = await axios.get(
-          `${BASE_URL}/students/attendance/${user._id}`
+          `${BASE_URL}/students/attendance/${menteeId}`
         );
+        
+        console.log("Attendance API response:", response.data); // Debug log
+        
         const data = response.data.data.attendance;
-
         if (data && data.semesters) {
-            setAttendanceData(data.semesters); // Store the semesters array directly
-
-            // Set initial selected semester if data exists
-            if (data.semesters.length > 0) {
-              setSelectedSemester(data.semesters[0].semester);
-            }
+          setAttendanceData(data.semesters);
+          if (data.semesters.length > 0) {
+            setSelectedSemester(data.semesters[0].semester);
+          }
         } else {
-            setAttendanceData([]); // Handle cases where there's no attendance data
+          setAttendanceData([]);
         }
-
         setLoading(false);
       } catch (err) {
+        console.error("Attendance fetch error:", err); // Debug log
         setError("Failed to fetch attendance data");
         setLoading(false);
       }
     };
 
     fetchAttendance();
-  }, [user._id]);
+  }, [user._id, searchParams]); // Add searchParams to dependencies
 
   // No need for transformBackendData in the old way
 

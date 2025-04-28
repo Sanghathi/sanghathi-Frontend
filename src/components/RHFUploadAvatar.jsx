@@ -1,14 +1,23 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Box, Typography, Avatar, CircularProgress } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import axios from 'axios';
 
+// Backend API configuration
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export default function RHFUploadAvatar({ name, value, onChange, ...other }) {
   const { enqueueSnackbar } = useSnackbar();
   const [isUploading, setIsUploading] = useState(false);
   const [preview, setPreview] = useState(value);
-  const baseUrl = import.meta.env.BASE_URL;
+
+  useEffect(() => {
+    // Update preview when value changes
+    if (value) {
+      setPreview(value);
+    }
+  }, [value]);
 
   const validateFile = (file) => {
     // Check file size (3MB max)
@@ -50,34 +59,31 @@ export default function RHFUploadAvatar({ name, value, onChange, ...other }) {
       // Start upload
       setIsUploading(true);
       
+      // Use backend API for upload
+      console.log('Uploading via backend API...');
+      
       const formData = new FormData();
       formData.append('image', file);
-
-      console.log('Uploading to server...');
-      // Use direct axios with baseUrl instead of api instance
-      const response = await axios.post(`${baseUrl}upload`, formData, {
+      
+      // Upload to backend API
+      const response = await axios.post(`${API_URL}/v1/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-
-      console.log('Server response:', response.data);
       
-      if (response.data.success) {
-        setIsUploading(false);
-        onChange(response.data.imageUrl);
-        enqueueSnackbar('Image uploaded successfully', { variant: 'success' });
-      } else {
-        setIsUploading(false);
-        enqueueSnackbar(response.data.error || 'Upload failed', { variant: 'error' });
-      }
+      console.log('Upload response:', response.data);
+      
+      // Update with the image URL from response
+      setIsUploading(false);
+      onChange(response.data.imageUrl);
+      enqueueSnackbar('Image uploaded successfully', { variant: 'success' });
     } catch (error) {
       console.error('Upload error:', error);
       setIsUploading(false);
-      enqueueSnackbar('Failed to upload image: ' + (error.message || 'Unknown error'), { variant: 'error' });
+      enqueueSnackbar('Failed to upload image: ' + (error.response?.data?.message || error.message || 'Unknown error'), { variant: 'error' });
     }
-  }, [onChange, enqueueSnackbar, baseUrl]);
+  }, [onChange, enqueueSnackbar]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

@@ -382,14 +382,14 @@ const StudentDashboard = () => {
               />
             </Grid>
             
-            <Grid item xs={12} sm={6} md={6} lg={4}>
+            {/* <Grid item xs={12} sm={6} md={6} lg={4}>
               <StudentTile
                 title="Parent Teacher Meeting"
                 icon={<GroupIcon />}
                 link="/student/ptm"
                 menteeId={menteeId}
               />
-            </Grid>
+            </Grid> */}
             
             <Grid item xs={12} sm={6} md={6} lg={4}>
               <StudentTile

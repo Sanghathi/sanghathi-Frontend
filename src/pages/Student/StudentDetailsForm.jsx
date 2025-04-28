@@ -7,8 +7,9 @@ import { useForm, useWatch } from "react-hook-form";
 import { AuthContext } from "../../context/AuthContext";
 
 // @mui
-import { Box, Grid, Card, Stack } from "@mui/material";
+import { Box, Grid, Card, Stack, Avatar, CircularProgress } from "@mui/material";
 import { LoadingButton } from "@mui/lab";
+import { useTheme } from "@mui/material/styles";
 
 // components
 import {
@@ -17,6 +18,7 @@ import {
   RHFSelect,
 } from "../../components/hook-form";
 import RHFUploadAvatar from '../../components/RHFUploadAvatar';
+import CloudinaryImage from '../../components/CloudinaryImage';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 const yesNoOptions = [
@@ -48,6 +50,7 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useContext(AuthContext);
   const [isDataFetched, setIsDataFetched] = useState(false);
+  const theme = useTheme();
 
   const methods = useForm({
     defaultValues: {
@@ -306,30 +309,74 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
     [setValue, trigger, enqueueSnackbar]
   );
   
+  const isCloudinaryUrl = (url) => {
+    return typeof url === 'string' && url.includes('cloudinary.com');
+  };
 
-return (
-  <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
+  return (
+    <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
       <Grid container spacing={2}>
         <Grid item xs={12} md={4}>
           <Card sx={{ height: "100%", py: 10, px: 3, textAlign: "center" }}>
-            <RHFUploadAvatar
-              name="studentProfile.photo"
-              value={watch('studentProfile.photo')}
-              onChange={(url) => setValue('studentProfile.photo', url)}
-            />
-            <Box
-              component="span"
-              sx={{
-                mt: 2,
-                mx: "auto",
-                display: "block",
-                textAlign: "center",
-                color: "text.secondary",
-              }}
-            >
-              Allowed *.jpeg, *.jpg, *.png, *.gif
-              <br /> max size of 3MB
-            </Box>
+            {isCloudinaryUrl(watch('studentProfile.photo')) ? (
+              <>
+                <Box sx={{ mb: 5, mx: 'auto', width: 144, height: 144, position: 'relative' }}>
+                  <CloudinaryImage
+                    publicId={watch('studentProfile.photo')}
+                    alt="Student Avatar"
+                    width="144"
+                    height="144"
+                    crop="fill"
+                    gravity="face"
+                    radius="max"
+                    style={{ width: '100%', height: '100%', borderRadius: '50%' }}
+                  />
+                </Box>
+                <RHFUploadAvatar
+                  name="studentProfile.photo"
+                  accept="image/*"
+                  maxSize={3145728}
+                  onDrop={handleDropAvatar}
+                  helperText={
+                    <Box
+                      component="span"
+                      sx={{
+                        mt: 2,
+                        mx: "auto",
+                        display: "block",
+                        textAlign: "center",
+                        color: "text.secondary",
+                      }}
+                    >
+                      Allowed *.jpeg, *.jpg, *.png, *.gif
+                      <br /> max size of 3MB
+                    </Box>
+                  }
+                />
+              </>
+            ) : (
+              <RHFUploadAvatar
+                name="studentProfile.photo"
+                accept="image/*"
+                maxSize={3145728}
+                onDrop={handleDropAvatar}
+                helperText={
+                  <Box
+                    component="span"
+                    sx={{
+                      mt: 2,
+                      mx: "auto",
+                      display: "block",
+                      textAlign: "center",
+                      color: "text.secondary",
+                    }}
+                  >
+                    Allowed *.jpeg, *.jpg, *.png, *.gif
+                    <br /> max size of 3MB
+                  </Box>
+                }
+              />
+            )}
           </Card>
         </Grid>
         <Grid item xs={12} md={8}>

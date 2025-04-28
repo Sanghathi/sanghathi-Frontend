@@ -1,4 +1,4 @@
-# E-Mithru
+# Sanghathi
 
 This platform provides comprehensive tools for educators, mentors, and mentees as part of the digital education ecosystem.
 

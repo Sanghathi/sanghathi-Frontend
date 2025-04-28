@@ -251,8 +251,8 @@ const POAttainmentGrading = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell sx={tableHeadCellStyle}>PO</TableCell>
-                <TableCell sx={tableHeadCellStyle}>CL</TableCell>
+                <TableCell sx={tableHeadCellStyle}>Program Outcomes</TableCell>
+                <TableCell sx={tableHeadCellStyle}>Corelation Level</TableCell>
                 <TableCell sx={tableHeadCellStyle}>Mentor Justification</TableCell>
               </TableRow>
             </TableHead>

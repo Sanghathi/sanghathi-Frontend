@@ -17,6 +17,7 @@ import {
   RHFSelect,
   RHFUploadAvatar,
 } from "../../components/hook-form";
+import CloudinaryImage from '../../components/CloudinaryImage';
 
 const yesNoOptions = [
   { value: "yes", label: "Yes" },
@@ -215,33 +216,75 @@ export default function FacultyDetailsForm() {
     [setValue, trigger, enqueueSnackbar]
   );
 
+  const isCloudinaryUrl = (url) => {
+    return typeof url === 'string' && url.includes('cloudinary.com');
+  };
+
   return (
     <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
       <Grid container spacing={2}>
         <Grid item xs={12} md={4}>
           <Card sx={{ height: "100%", py: 10, px: 3, textAlign: "center" }}>
-            <RHFUploadAvatar
-            name="facultyProfile.photo"
-            accept="image/*"
-            maxSize={3145728}
-            onDrop={handleDropAvatar}
-            file={watch('facultyProfile.photoPreview')}
-            helperText={
-              <Box
-                component="span"
-                sx={{
-                  mt: 2,
-                  mx: "auto",
-                  display: "block",
-                  textAlign: "center",
-                  color: "text.secondary",
-                }}
-              >
-                Allowed *.jpeg, *.jpg, *.png, *.gif
-                <br /> max size of 3MB
-              </Box>
-            }
-          />
+            {isCloudinaryUrl(watch('facultyProfile.photo')) ? (
+              <>
+                <Box sx={{ mb: 5, mx: 'auto', width: 144, height: 144, position: 'relative' }}>
+                  <CloudinaryImage
+                    publicId={watch('facultyProfile.photo')}
+                    alt="Faculty Avatar"
+                    width="144"
+                    height="144"
+                    crop="fill"
+                    gravity="face"
+                    radius="max"
+                    style={{ width: '100%', height: '100%', borderRadius: '50%' }}
+                  />
+                </Box>
+                <RHFUploadAvatar
+                  name="facultyProfile.photo"
+                  accept="image/*"
+                  maxSize={3145728}
+                  onDrop={handleDropAvatar}
+                  helperText={
+                    <Box
+                      component="span"
+                      sx={{
+                        mt: 2,
+                        mx: "auto",
+                        display: "block",
+                        textAlign: "center",
+                        color: "text.secondary",
+                      }}
+                    >
+                      Allowed *.jpeg, *.jpg, *.png, *.gif
+                      <br /> max size of 3MB
+                    </Box>
+                  }
+                />
+              </>
+            ) : (
+              <RHFUploadAvatar
+                name="facultyProfile.photo"
+                accept="image/*"
+                maxSize={3145728}
+                onDrop={handleDropAvatar}
+                file={watch('facultyProfile.photoPreview')}
+                helperText={
+                  <Box
+                    component="span"
+                    sx={{
+                      mt: 2,
+                      mx: "auto",
+                      display: "block",
+                      textAlign: "center",
+                      color: "text.secondary",
+                    }}
+                  >
+                    Allowed *.jpeg, *.jpg, *.png, *.gif
+                    <br /> max size of 3MB
+                  </Box>
+                }
+              />
+            )}
           </Card>
         </Grid>
         <Grid item xs={12} md={8}>

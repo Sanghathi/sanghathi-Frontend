@@ -167,12 +167,20 @@ export default function ThreadWindow() {
 
   const { enqueueSnackbar } = useSnackbar();
 
+  // Join the socket room when the component mounts and threadId is available
   useEffect(() => {
-    joinRoom(threadId);
+    if (threadId) {
+      console.log(`Joining thread room: ${threadId}`);
+      joinRoom(threadId);
+    }
+    
     return () => {
-      leaveRoom(threadId);
+      if (threadId) {
+        console.log(`Leaving thread room: ${threadId}`);
+        leaveRoom(threadId);
+      }
     };
-  }, [threadId]);
+  }, [threadId, joinRoom, leaveRoom]);
 
   const fetchThread = async () => {
     try {
@@ -183,10 +191,11 @@ export default function ThreadWindow() {
         setThread(data.thread);
         setMessages(data.thread.messages);
         console.log("THREAD ", data.thread);
-        setIsLoading(false);
       }
     } catch (error) {
       console.error(error);
+      enqueueSnackbar("Error loading thread", { variant: "error" });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -204,7 +213,7 @@ export default function ThreadWindow() {
       const response = await api.post(`/threads/${threadId}/messages`, message);
       const { data } = response.data;
       setMessages((prev) => [...prev, data.message]);
-      sendMessage(data.message, threadId); // FIXME : Socket is not working
+      sendMessage(data.message, threadId);
     } catch (err) {
       console.log(err);
     }
