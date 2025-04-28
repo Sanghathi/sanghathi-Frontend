@@ -1,4 +1,5 @@
-import logo from "../public/logo.png";
+import logo from "../public/cmrit_logo.png";
+import sidelogo from "../../public/logo.svg";
 import {
   Box,
   Card,
@@ -41,8 +42,6 @@ const Login = () => {
   const handleAdminDemoChange = (event) => {
     setIsAdminDemoChecked(event.target.checked);
     if (event.target.checked) {
-      email.current.value = "ghost@ex.com";
-      password.current.value = "ghost12345";
       setIsStudentDemoChecked(false);
       setIsFacultyDemoChecked(false);
     } else {
@@ -54,8 +53,6 @@ const Login = () => {
   const handleFacultyDemoChange = (event) => {
     setIsFacultyDemoChecked(event.target.checked);
     if (event.target.checked) {
-      email.current.value = "demofaculty@emithru.com";
-      password.current.value = "demofacultypassword";
       setIsStudentDemoChecked(false);
       setIsAdminDemoChecked(false);
     } else {
@@ -67,8 +64,6 @@ const Login = () => {
   const handleStudentDemoChange = (event) => {
     setIsStudentDemoChecked(event.target.checked);
     if (event.target.checked) {
-      email.current.value = "demostudent@emithru.com";
-      password.current.value = "demostudentpassword";
       setIsFacultyDemoChecked(false);
       setIsAdminDemoChecked(false);
     } else {
@@ -139,12 +134,20 @@ const Login = () => {
                 mx="auto"
               >
                 <Stack spacing={3} mb={3}>
-                  <Box display="flex" justifyContent="center" mb={4}>
+                  <Box display="flex" justifyContent="center" mb={4} gap={30}>
+                    <img
+                      src={sidelogo}
+                      alt="Side Logo"
+                      style={{
+                        width: "140px",
+                        filter: "none"
+                      }}
+                    />
                     <img
                       src={logo}
-                      alt="Logo"
+                      alt="CMRIT Logo"
                       style={{
-                        width: "120px",
+                        width: "80px",
                         filter: "none"
                       }}
                     />
@@ -156,7 +159,7 @@ const Login = () => {
                     align="center"
                     gutterBottom
                   >
-                    Sign in to e-Mithru
+                    Sign in to Sanghathi
                   </Typography>
                   <TextField
                     label="Email"
@@ -193,7 +196,7 @@ const Login = () => {
                           name="faculty"
                         />
                       }
-                      label="Faculty Demo"
+                      label="Faculty"
                     />
                     <FormControlLabel
                       control={

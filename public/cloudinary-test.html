@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cloudinary Test</title>
+  <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+</head>
+<body>
+  <h1>Cloudinary Test Page</h1>
+  
+  <button id="upload_widget" class="cloudinary-button">Upload files</button>
+  
+  <div id="uploadResult"></div>
+  
+  <script>
+    var resultDiv = document.getElementById('uploadResult');
+    
+    // Test if we can access the Cloudinary Widget
+    var myWidget = cloudinary.createUploadWidget({
+      cloudName: 'dc5xtrpnm',
+      uploadPreset: 'ml_default',
+      sources: ['local', 'camera'],
+      multiple: false,
+      cropping: true,
+      croppingAspectRatio: 1,
+      maxFileSize: 3000000,
+      showSkipCropButton: false
+    }, (error, result) => {
+      if (error) {
+        resultDiv.innerHTML = '<p style="color: red;">Error: ' + JSON.stringify(error) + '</p>';
+      } else if (result && result.event === "success") {
+        resultDiv.innerHTML = '<p style="color: green;">Success!</p>';
+        resultDiv.innerHTML += '<p>Image URL: ' + result.info.secure_url + '</p>';
+        resultDiv.innerHTML += '<p>Full Response: ' + JSON.stringify(result.info) + '</p>';
+      }
+    });
+    
+    document.getElementById("upload_widget").addEventListener("click", function() {
+      myWidget.open();
+    }, false);
+  </script>
+</body>
+</html> 

@@ -205,7 +205,7 @@ const FacultyDashboard = () => {
                   color="text.secondary" 
                   sx={{ maxWidth: '600px', mt: 3 }}
                 >
-                  Welcome to the e-Mithru faculty portal. Access all faculty services from here.
+                  Welcome to the Sanghathi faculty portal. Access all faculty services from here.
                 </Typography>
               </Box>
             </Paper>
@@ -261,7 +261,7 @@ const FacultyDashboard = () => {
                   color="text.secondary" 
                   sx={{ maxWidth: '600px', mt: 3 }}
                 >
-                  Welcome to the e-Mithru faculty portal. Access all faculty services from here.
+                  Welcome to the Sanghathi faculty portal. Access all faculty services from here.
                 </Typography>
               </Box>
             </Paper>

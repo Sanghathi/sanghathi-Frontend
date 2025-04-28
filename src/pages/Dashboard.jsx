@@ -199,7 +199,7 @@ const Dashboard = () => {
                   color="text.secondary" 
                   sx={{ maxWidth: '600px', mt: 3 }}
                 >
-                  Welcome to the e-Mithru student portal. Access all student services from here.
+                  Welcome to the Sanghathi student portal. Access all student services from here.
                 </Typography>
               </Box>
             </Paper>
@@ -255,7 +255,7 @@ const Dashboard = () => {
                   color="text.secondary" 
                   sx={{ maxWidth: '600px', mt: 3 }}
                 >
-                  Welcome to the e-Mithru student portal. Access all student services from here.
+                  Welcome to the Sanghathi student portal. Access all student services from here.
                 </Typography>
               </Box>
             </Paper>
@@ -302,17 +302,11 @@ const Dashboard = () => {
               />
             </Grid>
             
-            <Grid item xs={12} sm={6} md={isLight ? 6 : 6} lg={isLight ? 4 : 4}>
-              <StudentTile
-                title="Parent Teacher Meeting"
-                icon={<GroupIcon />}
-                link="/student/ptm"
-              />
-            </Grid>
+
             
             <Grid item xs={12} sm={6} md={isLight ? 6 : 6} lg={isLight ? 4 : 4}>
               <StudentTile
-                title="PO Attainment and Bloom's Level"
+                title="PO Attainment"
                 icon={<AnalyticsIcon />}
                 link="/po-attainment-grading"
               />

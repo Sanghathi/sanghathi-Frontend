@@ -176,7 +176,7 @@ const AdminDashboard = () => {
                 color="text.secondary" 
                 sx={{ maxWidth: '600px', mt: 3 }}
               >
-                Welcome to the e-Mithru admin portal. Manage users and system data from here.
+                Welcome to the Sanghathi admin portal. Manage users and system data from here.
               </Typography>
             </Box>
           </Paper>
@@ -232,7 +232,7 @@ const AdminDashboard = () => {
                 color="text.secondary" 
                 sx={{ maxWidth: '600px', mt: 3 }}
               >
-                Welcome to the e-Mithru admin portal. Manage users and system data from here.
+                Welcome to the Sanghathi admin portal. Manage users and system data from here.
               </Typography>
             </Box>
           </Paper>
