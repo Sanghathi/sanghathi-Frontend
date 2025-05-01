@@ -5,9 +5,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 // import { get } from "react-hook-form";
 // import { Engineering } from "@mui/icons-material";
 import { askRag } from './apiCalls.js';
-let apiKey = "AIzaSyBAR_Ugl_23G4xarll8jn2L5dqVeD122Yc";
 let hasError = false;
-
+let apikey=process.env.GEMINI_API_KEY;
 // Function to call Gemini
 const callGemini = async (userInput) => {
   try {
