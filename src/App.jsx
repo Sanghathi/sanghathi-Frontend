@@ -41,6 +41,7 @@ import FetchStudentProfile from "./pages/Faculty/FetchStudentProfile";
 import StudentDashboard from "./pages/Faculty/StudentDashboard";
 import Settings from "./pages/Settings/Settings";
 import TYLScorecard from "./pages/Student/TYLScorecard";
+import MyChatBot from "./mychatbot";
 // TODO : Need to remove routing logic from app component
 function App() {
   const { user } = useContext(AuthContext);
@@ -212,7 +213,7 @@ function App() {
                     path="/campus-buddy"
                     element={
                       <ProtectedRouteWrapper>
-                        <LazyLoadWrapper component={CampusBuddy} />
+                        <LazyLoadWrapper component={MyChatBot} />
                       </ProtectedRouteWrapper>
                     }
                   />
