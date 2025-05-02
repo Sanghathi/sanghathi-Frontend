@@ -6,21 +6,21 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 // import { Engineering } from "@mui/icons-material";
 import { askRag } from './apiCalls.js';
 let hasError = false;
-let apikey=process.env.GEMINI_API_KEY;
-// Function to call Gemini
-const callGemini = async (userInput) => {
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const result = await model.generateContent(userInput);
-    const response = await result.response;
-    return response.text();
-  } catch (error) {
-    console.error("Gemini error:", error);
-    hasError = true;
-    return "❌ Failed to load Gemini model. Check your API key.";
-  }
-};
+// let apikey=process.env.GEMINI_API_KEY;
+// // Function to call Gemini
+// const callGemini = async (userInput) => {
+//   try {
+//     const genAI = new GoogleGenerativeAI(apiKey);
+//     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+//     const result = await model.generateContent(userInput);
+//     const response = await result.response;
+//     return response.text();
+//   } catch (error) {
+//     console.error("Gemini error:", error);
+//     hasError = true;
+//     return "❌ Failed to load Gemini model. Check your API key.";
+//   }
+// };
 
 const MyChatBot = () => {
     const themes = [
