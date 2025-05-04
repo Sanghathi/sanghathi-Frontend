@@ -26,3 +26,17 @@ export const loginCall = async (userCredential, dispatch) => {
     throw err;
   }
 };
+export async function askRag(question) {
+  const url = `http://localhost:8000/api/ask`;  // No query parameter now
+  const res = await fetch(url, {
+    method: 'POST',  // Use POST instead of GET
+    headers: {
+      'Content-Type': 'application/json',  // Send JSON data
+    },
+    body: JSON.stringify({ question })  // Send question in the request body
+  });
+
+  if (!res.ok) throw new Error('RAG request failed');
+  const { answer } = await res.json();
+  return answer;
+}
