@@ -1,6 +1,7 @@
 import { useSnackbar } from "notistack";
 import { useCallback, useContext, useState, useEffect } from "react";
 import api from "../../utils/axios";
+
 import { useSearchParams } from "react-router-dom";
 // form
 import { useForm, useWatch } from "react-hook-form";
@@ -18,9 +19,7 @@ import {
   RHFSelect,
 } from "../../components/hook-form";
 import RHFUploadAvatar from '../../components/RHFUploadAvatar';
-import CloudinaryImage from '../../components/CloudinaryImage';
 
-const BASE_URL = import.meta.env.VITE_API_URL;
 const yesNoOptions = [
   { value: "yes", label: "Yes" },
   { value: "no", label: "No" },
@@ -67,11 +66,9 @@ const getCloudinaryPublicId = (url) => {
 };
 
 export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit }) {
-  const [searchParams] = useSearchParams();
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useContext(AuthContext);
   const [isDataFetched, setIsDataFetched] = useState(false);
-  const theme = useTheme();
 
   const methods = useForm({
     defaultValues: {
@@ -111,7 +108,6 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
       "studentProfile.department",
       "studentProfile.sem",
       "studentProfile.personalEmail",
-      // "studentProfile.mentorName",
       "studentProfile.email",
       "studentProfile.usn",
       "studentProfile.dateOfBirth",
@@ -152,9 +148,6 @@ export default function StudentDetailsForm({ colorMode, menteeId, isAdminEdit })
       "studentProfile.hostelite",
       "studentProfile.physicallyChallenged",
     ].indexOf(fieldName);
-    
-    // Always return true to ensure inputs are always controlled
-    // This avoids the uncontrolled to controlled switch
     return true;
   };
 

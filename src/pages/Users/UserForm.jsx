@@ -6,14 +6,14 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import api from "../../utils/axios"; // axios instance
 
 // @mui
-import { 
-  Box, 
-  Grid, 
-  Card, 
-  Stack, 
-  Typography, 
-  Divider, 
-  Button, 
+import {
+  Box,
+  Grid,
+  Card,
+  Stack,
+  Typography,
+  Divider,
+  Button,
   useTheme,
   alpha,
 } from "@mui/material";
@@ -72,7 +72,7 @@ const departmentOptions = [
   "CS(DS)",
   "ECE",
   "MBA",
-  "MCA"
+  "MCA",
 ];
 
 const semesterOptions = Array.from({ length: 8 }, (_, i) => i + 1);
@@ -99,138 +99,165 @@ export default function UserForm({ editingUser }) {
     },
   });
 
-  const { setValue, handleSubmit, reset, formState: { isSubmitting } } = methods;
+  const {
+    setValue,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting },
+  } = methods;
 
   // Remove the role ID fetching effect
-  // useEffect(() => {
-  //   const fetchRoleId = async () => {
-  //     try {
-  //       const response = await api.get(`/roles/${methods.getValues("role")}`);
-  //       setRoleId(response.data.id);
-  //     } catch (error) {
-  //       console.error("Failed to fetch role ID:", error);
-  //     }
-  //   };
-  //   fetchRoleId();
-  // }, [methods]);
+  useEffect(() => {
+    const fetchRoleId = async () => {
+      try {
+        const response = await api.get(`/roles/${methods.getValues("role")}`);
+        setRoleId(response.data._id); // Store the ObjectId
+      } catch (error) {
+        console.error("Failed to fetch role ID:", error);
+        enqueueSnackbar("Failed to fetch role information", {
+          variant: "error",
+        });
+      }
+    };
+
+    fetchRoleId();
+  }, [methods.watch("role")]);
 
   //handle form submission
   const onSubmit = useCallback(
-      async (formData) => {
-        console.log("Form data:", formData);
-        try {
-          // Split the name into first and last name
-          const nameParts = formData.name.split(' ');
-          const firstName = nameParts[0];
-          const lastName = nameParts.slice(1).join(' ') || '';
+    async (formData) => {
+      console.log("Form data:", formData);
+      try {
+        // Split the name into first and last name
+        const nameParts = formData.name.trim().split(/\s+/);
+        const firstName = nameParts[0];
+        const lastName =
+          nameParts.length > 1 ? nameParts.slice(1).join(" ") : "N/A";
 
-          //Create a user first
-          const userData = {
-            name: formData.name,
+        //Create a user first
+        const userData = {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password,
+          passwordConfirm: formData.passwordConfirm,
+          // avatar: avatar ? avatar.name || avatar : "",
+          role: roleId,
+          roleName: formData.role, // Use roleName instead of role ID
+        };
+        if (avatar && (typeof avatar === "string" || avatar.name)) {
+          userData.avatar = typeof avatar === "string" ? avatar : avatar.name;
+        }
+
+        console.log("Creating user with data:", userData);
+        const userResponse = await api.post("/users", {
+          ...userData,
+        });
+        console.log("User Response to create User:", userResponse.data);
+
+        //Create a profile with userId
+        if (userData.roleName == "student") {
+          const profileData = {
+            userId: userResponse.data._id,
+            fullName: {
+              firstName,
+              lastName,
+            },
+            department: formData.department,
+            sem: formData.sem,
+            usn: formData.usn,
             email: formData.email,
-            phone: formData.phone,
-            password: formData.password,
-            passwordConfirm: formData.passwordConfirm,
-            avatar,
-            roleName: formData.role, // Use roleName instead of role ID
+            mobileNumber: formData.phone,
           };
-    
-          console.log('Creating user with data:', userData);  
-            const userResponse = await api.post("/users", {
-              ...userData,
-            });
-            console.log('User Response to create User:', userResponse.data);
 
-            //Create a profile with userId
-            if(userData.roleName=="student"){
-              const profileData = {
-                userId: userResponse.data._id,
-                fullName: {
-                  firstName,
-                  lastName
-                },
-                department: formData.department,
-                sem: formData.sem,
-                usn: formData.usn,
-                email: formData.email,
-                mobileNumber: formData.phone
-              };
-        
-              console.log('Creating profile with data:', profileData);
-              
-              const profileResponse = await api.post("/students/profile", profileData);
-              console.log('Profile response:', profileResponse.data);
-              
-              if (!profileResponse.data?.data?.studentProfile?._id) {
-                throw new Error('Profile creation failed');
-              }
-        
-              const profileId = profileResponse.data.data.studentProfile._id;
-              console.log('Profile ID', profileId);
-              if (profileId) {
-                // Update User with Profile ID
-                await api.patch(`/users/${userResponse.data._id}`, {
-                  profileId: profileId,
-                });
-                
-                // Fetch the newly created student profile to verify it's there
-                try {
-                  const fetchResponse = await api.get(`/student-profiles/${userResponse.data._id}`);
-                  console.log('Fetched student profile:', fetchResponse.data);
-                  
-                  if (!fetchResponse.data) {
-                    console.warn('Student profile response is empty');
-                    enqueueSnackbar("User created, but profile may not be accessible immediately. Please refresh.", { variant: "warning" });
-                  }
-                } catch (fetchError) {
-                  console.error('Error fetching new student profile:', fetchError);
-                  enqueueSnackbar("User created, but profile may not be accessible immediately. Please refresh.", { variant: "warning" });
-                }
-              }
-            }
-            else{
-              const profileData = {
-                userId: userResponse.data._id,
-                fullName: {
-                  firstName,
-                  lastName
-                },
-                department: formData.department,
-                email: formData.email,
-                mobileNumber: formData.phone
-              };
-        
-              console.log('Creating profile with data:', profileData);
-              
-              const profileResponse = await api.post("/faculty/profile", profileData);
-              console.log('Faculty Profile response:', profileResponse.data);
-              
-              if (!profileResponse.data?.data?.facultyProfile?._id) {
-                throw new Error('Faculty Profile creation failed');
-              }
-        
-              const profileId = profileResponse.data.data.facultyProfile._id;
-              console.log('Faculty Profile ID', profileId);
-              if (profileId) {
-                // Update User with Profile ID
-                await api.patch(`/users/${userResponse.data._id}`, {
-                  profileId: profileId,
-                });
-              }
-            }
-            enqueueSnackbar("User created successfully!", { variant: "success" });
-            reset();
+          console.log("Creating profile with data:", profileData);
+
+          const profileResponse = await api.post(
+            "/students/profile",
+            profileData
+          );
+          console.log("Profile response:", profileResponse.data);
+
+          if (!profileResponse.data?.data?.studentProfile?._id) {
+            throw new Error("Profile creation failed");
           }
-          catch (error) {
-              console.error('Detailed error:', error.response?.data);
-              enqueueSnackbar(
-                error.response?.data?.message || 
-                error.message || 
-                "An error occurred while processing the request", 
-                { variant: "error" }
+
+          const profileId = profileResponse.data.data.studentProfile._id;
+          console.log("Profile ID", profileId);
+          if (profileId) {
+            // Update User with Profile ID
+            await api.patch(`/users/${userResponse.data._id}`, {
+              profileId: profileId,
+            });
+
+            // Fetch the newly created student profile to verify it's there
+            try {
+              const fetchResponse = await api.get(
+                `/student-profiles/${userResponse.data._id}`
               );
+              console.log("Fetched student profile:", fetchResponse.data);
+
+              if (!fetchResponse.data) {
+                console.warn("Student profile response is empty");
+                enqueueSnackbar(
+                  "User created, but profile may not be accessible immediately. Please refresh.",
+                  { variant: "warning" }
+                );
+              }
+            } catch (fetchError) {
+              console.error("Error fetching new student profile:", fetchError);
+              enqueueSnackbar(
+                "User created, but profile may not be accessible immediately. Please refresh.",
+                { variant: "warning" }
+              );
+            }
           }
-    },[methods, avatar, reset, enqueueSnackbar]
+        } else {
+          const profileData = {
+            userId: userResponse.data._id,
+            fullName: {
+              firstName,
+              lastName,
+            },
+            department: formData.department,
+            email: formData.email,
+            mobileNumber: formData.phone,
+          };
+
+          console.log("Creating profile with data:", profileData);
+
+          const profileResponse = await api.post(
+            "/faculty/profile",
+            profileData
+          );
+          console.log("Faculty Profile response:", profileResponse.data);
+
+          if (!profileResponse.data?.data?.facultyProfile?._id) {
+            throw new Error("Faculty Profile creation failed");
+          }
+
+          const profileId = profileResponse.data.data.facultyProfile._id;
+          console.log("Faculty Profile ID", profileId);
+          if (profileId) {
+            // Update User with Profile ID
+            await api.patch(`/users/${userResponse.data._id}`, {
+              profileId: profileId,
+            });
+          }
+        }
+        enqueueSnackbar("User created successfully!", { variant: "success" });
+        reset();
+      } catch (error) {
+        console.error("Detailed error:", error.response?.data);
+        enqueueSnackbar(
+          error.response?.data?.message ||
+            error.message ||
+            "An error occurred while processing the request",
+          { variant: "error" }
+        );
+      }
+    },
+    [methods, avatar, reset, enqueueSnackbar]
   );
 
   // Handle avatar drop
@@ -268,18 +295,22 @@ export default function UserForm({ editingUser }) {
   return (
     <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
       <Card sx={{ boxShadow: 1 }}>
-        
-
-        <Grid container spacing={3} sx={{ p: 3, backgroundColor: theme.palette.background.default }}>
+        <Grid
+          container
+          spacing={3}
+          sx={{ p: 3, backgroundColor: theme.palette.background.default }}
+        >
           <Grid item xs={12} md={4}>
-            <Card sx={{ 
-              py: 10, 
-              px: 3, 
-              textAlign: "center", 
-              height: '100%',
-              backgroundColor: theme.palette.background.paper,
-              boxShadow: theme.shadows[2]
-            }}>
+            <Card
+              sx={{
+                py: 10,
+                px: 3,
+                textAlign: "center",
+                height: "100%",
+                backgroundColor: theme.palette.background.paper,
+                boxShadow: theme.shadows[2],
+              }}
+            >
               <RHFUploadAvatar
                 name="avatar"
                 accept="image/*"
@@ -303,19 +334,21 @@ export default function UserForm({ editingUser }) {
               />
             </Card>
           </Grid>
-          
+
           <Grid item xs={12} md={8}>
-            <Card sx={{ 
-              p: 3, 
-              height: '100%',
-              backgroundColor: theme.palette.background.paper,
-              boxShadow: theme.shadows[2]
-            }}>
+            <Card
+              sx={{
+                p: 3,
+                height: "100%",
+                backgroundColor: theme.palette.background.paper,
+                boxShadow: theme.shadows[2],
+              }}
+            >
               <Stack spacing={3}>
                 <Typography variant="subtitle1" sx={{ mb: 1 }}>
                   Basic Information
                 </Typography>
-                
+
                 <RHFTextField
                   name="name"
                   label="Full Name"
@@ -323,7 +356,7 @@ export default function UserForm({ editingUser }) {
                   fullWidth
                   autoComplete="given-name"
                 />
-                
+
                 <RHFTextField
                   name="email"
                   label="Email Address"
@@ -332,7 +365,7 @@ export default function UserForm({ editingUser }) {
                   fullWidth
                   autoComplete="email"
                 />
-                
+
                 <RHFTextField
                   name="phone"
                   label="Phone Number"
@@ -341,43 +374,53 @@ export default function UserForm({ editingUser }) {
                   fullWidth
                   autoComplete="tel"
                 />
-                
+
                 <Divider />
-                
+
                 <Typography variant="subtitle1">
                   Academic Information
                 </Typography>
-                
-                <RHFSelect name="department" label="Department" required fullWidth>
+
+                <RHFSelect
+                  name="department"
+                  label="Department"
+                  required
+                  fullWidth
+                >
                   <option value="">Select Department</option>
                   {departmentOptions.map((dept) => (
-                    <option key={dept} value={dept}>{dept}</option>
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
                   ))}
                 </RHFSelect>
-                
+
                 <Box
                   sx={{
                     display: "grid",
                     columnGap: 2,
                     rowGap: 3,
-                    gridTemplateColumns: { xs: "repeat(1, 1fr)", sm: "repeat(2, 1fr)" },
+                    gridTemplateColumns: {
+                      xs: "repeat(1, 1fr)",
+                      sm: "repeat(2, 1fr)",
+                    },
                   }}
                 >
                   <RHFSelect name="sem" label="Semester" fullWidth>
                     <option value="">Select Semester</option>
                     {semesterOptions.map((sem) => (
-                      <option key={sem} value={sem.toString()}>{sem}</option>
+                      <option key={sem} value={sem.toString()}>
+                        {sem}
+                      </option>
                     ))}
                   </RHFSelect>
                   <RHFTextField name="usn" label="USN" fullWidth />
                 </Box>
-                
+
                 <Divider />
-                
-                <Typography variant="subtitle1">
-                  Account Settings
-                </Typography>
-                
+
+                <Typography variant="subtitle1">Account Settings</Typography>
+
                 <RHFSelect name="role" label="Role" fullWidth required>
                   {options.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -385,13 +428,16 @@ export default function UserForm({ editingUser }) {
                     </option>
                   ))}
                 </RHFSelect>
-                
+
                 <Box
                   sx={{
                     display: "grid",
                     columnGap: 2,
                     rowGap: 3,
-                    gridTemplateColumns: { xs: "repeat(1, 1fr)", sm: "repeat(2, 1fr)" },
+                    gridTemplateColumns: {
+                      xs: "repeat(1, 1fr)",
+                      sm: "repeat(2, 1fr)",
+                    },
                   }}
                 >
                   <RHFTextField
@@ -413,8 +459,15 @@ export default function UserForm({ editingUser }) {
                     disabled={!!editingUser}
                   />
                 </Box>
-                
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, gap: 2 }}>
+
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    mt: 2,
+                    gap: 2,
+                  }}
+                >
                   {!editingUser && (
                     <Button
                       variant="outlined"
@@ -442,4 +495,4 @@ export default function UserForm({ editingUser }) {
   );
 }
 
-export {getUserSchema};
+export { getUserSchema };
