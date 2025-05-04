@@ -14,21 +14,15 @@ import {
   Menu,
   MenuItem,
 } from "@mui/material";
-
 import { useSnackbar } from "notistack";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-
 import { AuthContext } from "../../context/AuthContext";
-
 import Page from "../../components/Page";
-
 import api from "../../utils/axios";
-
 import { MessageList, MessageInput } from "./Message/Message";
-
 import useSocket from "../../hooks/useSocket";
 
-const ThreadHeader = ({ thread, onCloseThread }) => {
+const ThreadHeader = ({ thread, onCloseThread, currentUser }) => {
   const statusColors = {
     open: "#4caf50",
     "In Progress": "#ff9800",
@@ -108,13 +102,13 @@ const ThreadHeader = ({ thread, onCloseThread }) => {
               }}
               alt={participant.name}
             >
-              {/* TODO : Conditional based on the online status */}
+              {/* TODO: Conditional based on the online status */}
               <Box
                 sx={{
                   position: "absolute",
                   bottom: 10,
                   right: 8,
-                  transform: "translate(50%, 50%)", // center the icon on the right and bottom
+                  transform: "translate(50%, 50%)",
                   width: 6,
                   height: 6,
                   borderRadius: "50%",
@@ -127,27 +121,29 @@ const ThreadHeader = ({ thread, onCloseThread }) => {
           </Tooltip>
         ))}
 
-        {thread.status === "open" && (
-          <Box sx={{ ml: 2 }}>
-            <IconButton onClick={handleClick}>
-              <MoreVertIcon />
-            </IconButton>
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleClose}
-            >
-              <MenuItem
-                onClick={() => {
-                  handleClose();
-                  onCloseThread();
-                }}
+        {/* Show "Mark as closed" option only if thread is open AND the current user is the creator */}
+        {thread.status === "open" &&
+          thread.participants[0]._id === currentUser._id && (
+            <Box sx={{ ml: 2 }}>
+              <IconButton onClick={handleClick}>
+                <MoreVertIcon />
+              </IconButton>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
               >
-                Mark as closed
-              </MenuItem>
-            </Menu>
-          </Box>
-        )}
+                <MenuItem
+                  onClick={() => {
+                    handleClose();
+                    onCloseThread();
+                  }}
+                >
+                  Mark as closed
+                </MenuItem>
+              </Menu>
+            </Box>
+          )}
       </Box>
     </Box>
   );
@@ -164,7 +160,6 @@ export default function ThreadWindow() {
     user._id,
     setMessages
   );
-
   const { enqueueSnackbar } = useSnackbar();
 
   // Join the socket room when the component mounts and threadId is available
@@ -173,7 +168,7 @@ export default function ThreadWindow() {
       console.log(`Joining thread room: ${threadId}`);
       joinRoom(threadId);
     }
-    
+
     return () => {
       if (threadId) {
         console.log(`Leaving thread room: ${threadId}`);
@@ -205,6 +200,9 @@ export default function ThreadWindow() {
   }, [threadId]);
 
   const handleSendMessage = async (newMessage) => {
+    // Prevent sending message if thread is closed
+    if (thread.status === "closed") return;
+
     const message = {
       senderId: user._id,
       body: newMessage,
@@ -226,6 +224,8 @@ export default function ThreadWindow() {
         enqueueSnackbar("Successfully marked thread closed!", {
           variant: "success",
         });
+        // Update thread status locally
+        setThread((prevThread) => ({ ...prevThread, status: "closed" }));
       } else {
         enqueueSnackbar("Thread close request failed!", { variant: "error" });
       }
@@ -235,32 +235,21 @@ export default function ThreadWindow() {
     }
   };
 
-  //FIXME : ThreadHeader should be displayed when the thread has loaded
-
-  /* 
-  TODO:
-  Add a placeholder messages when there are no messages to display
-*/
   return (
     <Page title="Thread">
       <Container maxWidth="xl" sx={{ overflowX: "hidden", overflowY: "auto" }}>
         <Card sx={{ height: "90vh", display: "flex", flexShrink: 0 }}>
-          {/* <ChatProvider> */}
           <Stack sx={{ flexGrow: 1, minWidth: "1px" }}>
-            <Box
-              sx={{
-                p: 2,
-              }}
-            >
+            <Box sx={{ p: 2 }}>
               {thread && (
                 <ThreadHeader
                   thread={thread}
                   onCloseThread={handleThreadClose}
+                  currentUser={user}
                 />
               )}
             </Box>
             <Divider />
-
             <Box
               sx={{
                 flexGrow: 1,
@@ -281,29 +270,34 @@ export default function ThreadWindow() {
                   <CircularProgress />
                 </Box>
               ) : (
-                <>
-                  <Stack sx={{ flexGrow: 1, flexShrink: 0 }}>
-                    {thread && (
-                      <>
-                        <MessageList
-                          conversation={thread}
-                          messages={messages}
-                        />
-
-                        <Divider />
-
+                <Stack sx={{ flexGrow: 1, flexShrink: 0 }}>
+                  {thread && (
+                    <>
+                      <MessageList conversation={thread} messages={messages} />
+                      <Divider />
+                      {thread.status === "closed" ? (
+                        <Box
+                          sx={{
+                            p: 2,
+                            textAlign: "center",
+                            color: "error.main",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          This thread is closed
+                        </Box>
+                      ) : (
                         <MessageInput
                           disabled={!thread}
                           onSend={handleSendMessage}
                         />
-                      </>
-                    )}
-                  </Stack>
-                </>
+                      )}
+                    </>
+                  )}
+                </Stack>
               )}
             </Box>
           </Stack>
-          {/* </ChatProvider> */}
         </Card>
       </Container>
     </Page>

@@ -3,9 +3,6 @@ import {
   Box,
   Button,
   Divider,
-  IconButton,
-  Menu,
-  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -15,28 +12,21 @@ import {
   Typography,
   Tooltip,
   Avatar,
-  ListItemIcon,
   Paper,
   TablePagination,
   useTheme,
 } from "@mui/material";
-import { MoreVert, Close, Delete, Edit } from "@mui/icons-material";
+import { Delete } from "@mui/icons-material";
 
 const ThreadList = ({
   threads,
   onThreadClick,
-  onThreadEdit,
   onThreadDelete,
-  colorMode = 'primary',
+  colorMode = "primary",
 }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [anchorEl, setAnchorEl] = useState(false);
-  const [selectedThread, setSelectedThread] = useState(null);
   const theme = useTheme();
-  const isLight = theme.palette.mode === 'light';
-
-  console.log("THREADS", threads);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -49,15 +39,6 @@ const ThreadList = ({
 
   const rowsPerPageOptions = [5, 10, 25];
 
-  const handleMenuOpen = (event, thread) => {
-    setSelectedThread(thread);
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
   const statusColors = {
     open: "#4caf50",
     "In Progress": "#ff9800",
@@ -67,16 +48,15 @@ const ThreadList = ({
   return (
     <TableContainer component={Paper}>
       <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-        <Table>
+        <Table sx={{ tableLayout: "fixed" }}>
           <TableHead>
             <TableRow>
-              <TableCell>Title</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Category</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell style={{ display: "flex", alignItems: "center" }}>
-                Members
-              </TableCell>
+              <TableCell sx={{ width: "25%" }}>Title</TableCell>
+              <TableCell sx={{ width: "12%" }}>Status</TableCell>
+              <TableCell sx={{ width: "15%" }}>Category</TableCell>
+              <TableCell sx={{ width: "15%" }}>Date</TableCell>
+              <TableCell sx={{ width: "13%" }}>Members</TableCell>
+              <TableCell sx={{ width: "20%", pl: 1 }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -88,13 +68,15 @@ const ThreadList = ({
                   <TableCell>
                     <Typography
                       variant="body2"
-                      style={{
+                      sx={{
                         display: "inline-flex",
                         alignItems: "center",
                         backgroundColor: statusColors[thread.status],
                         borderRadius: "12px",
-                        padding: "0 8px",
+                        px: 1.5,
+                        py: 0.5,
                         color: "white",
+                        fontSize: "0.8rem",
                       }}
                     >
                       {thread.status}
@@ -104,70 +86,76 @@ const ThreadList = ({
                   <TableCell>
                     {new Date(thread.createdAt).toLocaleDateString()}
                   </TableCell>
-                  <TableCell style={{ display: "flex", cursor: "pointer" }}>
-                    {thread.participants.slice(0, 3).map((participant, idx) => (
-                      <Tooltip
-                        key={idx}
-                        title={`${participant.name}`}
-                        placement="top"
-                      >
-                        <Avatar
-                          sx={{
-                            ml: idx === 0 ? 0 : -1,
-                            zIndex: idx === 0 ? 3 : 2 - idx,
-                          }}
-                          alt={participant.name}
-                        >
-                          {participant.name[0]}
-                        </Avatar>
-                      </Tooltip>
-                    ))}
+                  <TableCell>
+                    <Box sx={{ display: "flex", cursor: "pointer", ml: -1 }}>
+                      {thread.participants
+                        .slice(0, 3)
+                        .map((participant, idx) => (
+                          <Tooltip
+                            key={idx}
+                            title={participant.name}
+                            placement="top"
+                          >
+                            <Avatar
+                              sx={{
+                                ml: idx === 0 ? 0 : -1.5,
+                                zIndex: idx === 0 ? 3 : 2 - idx,
+                                width: 32,
+                                height: 32,
+                                fontSize: "0.8rem",
+                              }}
+                              alt={participant.name}
+                            >
+                              {participant.name[0]}
+                            </Avatar>
+                          </Tooltip>
+                        ))}
+                    </Box>
                   </TableCell>
                   <TableCell>
                     <Box
-                      sx={{ display: "flex", justifyContent: "space-around" }}
+                      sx={{
+                        display: "flex",
+                        gap: 1.5,
+                        alignItems: "center",
+                        pl: 1,
+                      }}
                     >
                       <Button
                         variant="contained"
                         color={colorMode}
                         onClick={() => onThreadClick(thread)}
+                        sx={{
+                          px: 2,
+                          py: 0.5,
+                          fontSize: "0.8rem",
+                        }}
                       >
                         View
                       </Button>
-                      <IconButton
-                        onClick={(event) => handleMenuOpen(event, thread)}
-                      >
-                        <MoreVert />
-                      </IconButton>
-
-                      <Menu
-                        anchorEl={anchorEl}
-                        open={Boolean(anchorEl)}
-                        onClose={handleMenuClose}
-                      >
-                        <MenuItem
-                          onClick={(event) => {
-                            handleMenuClose();
-                            onThreadEdit(selectedThread);
+                      {thread.status === "closed" && (
+                        <Button
+                          variant="outlined"
+                          sx={{
+                            backgroundColor: "#f44336",
+                            color: "white",
+                            px: 1.5,
+                            py: 0.5,
+                            fontSize: "0.8rem",
+                            minWidth: "auto",
+                            "&:hover": {
+                              backgroundColor: "error.dark",
+                            },
+                            "& .MuiButton-startIcon": {
+                              mr: 0.5,
+                            },
                           }}
+                          onClick={() => onThreadDelete(thread)}
+                          startIcon={<Delete fontSize="small" />}
                         >
-                          <ListItemIcon>
-                            <Edit fontSize="small" color={colorMode} />
-                          </ListItemIcon>
-                          Edit
-                        </MenuItem>
-                        <MenuItem
-                          onClick={(event) => {
-                            handleMenuClose();
-                            onThreadDelete(selectedThread);
-                          }}
-                        >
-                          <ListItemIcon>
-                            <Delete fontSize="small" color="error" />
-                          </ListItemIcon>
                           Delete
-                        </MenuItem>
-                      </Menu>
+                        </Button>
+                      )}
                     </Box>
                   </TableCell>
                 </TableRow>
