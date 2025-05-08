@@ -4,12 +4,25 @@ import { useSearchParams } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import api from "../../utils/axios";
 import { useForm } from "react-hook-form";
-import { 
-  Box, Grid, Card, Stack, Typography, FormControl, FormLabel,
-  FormGroup, FormControlLabel, Checkbox, Divider 
+import {
+  Box,
+  Grid,
+  Card,
+  Stack,
+  Typography,
+  FormControl,
+  FormLabel,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
+  Divider,
 } from "@mui/material";
 import { LoadingButton } from "@mui/lab";
-import { FormProvider, RHFTextField, RHFSelect } from "../../components/hook-form";
+import {
+  FormProvider,
+  RHFTextField,
+  RHFSelect,
+} from "../../components/hook-form";
 
 const DEFAULT_VALUES = {
   admissionYear: "",
@@ -23,23 +36,29 @@ const DEFAULT_VALUES = {
     year: "",
     branch: "",
     usn: "",
-    collegeId: ""
+    collegeId: "",
   },
-  documentsSubmitted: []
+  documentsSubmitted: [],
 };
 
 export default function AdmissionDetails() {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useContext(AuthContext);
   const [searchParams] = useSearchParams();
-  const menteeId = searchParams.get('menteeId');
+  const menteeId = searchParams.get("menteeId");
   const [isDataFetched, setIsDataFetched] = useState(false);
 
   const methods = useForm({
-    defaultValues: DEFAULT_VALUES
+    defaultValues: DEFAULT_VALUES,
   });
 
-  const { handleSubmit, reset, setValue, watch, formState: { isSubmitting } } = methods;
+  const {
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { isSubmitting },
+  } = methods;
   const documentsSubmitted = watch("documentsSubmitted");
 
   const fetchAdmissionDetails = useCallback(async () => {
@@ -51,9 +70,14 @@ export default function AdmissionDetails() {
       const admissionData = admissionResponse.data.data?.admissionDetails;
 
       if (admissionData) {
-        Object.keys(DEFAULT_VALUES).forEach(key => {
-          if (typeof admissionData[key] === "object" && admissionData[key] !== null) {
-            Object.keys(admissionData[key]).forEach(subKey => {
+        Object.keys(DEFAULT_VALUES).forEach((key) => {
+          if (key === "documentsSubmitted") {
+            setValue(key, admissionData[key] || []);
+          } else if (
+            typeof admissionData[key] === "object" &&
+            admissionData[key] !== null
+          ) {
+            Object.keys(admissionData[key]).forEach((subKey) => {
               setValue(`${key}.${subKey}`, admissionData[key][subKey] || "");
             });
           } else {
@@ -63,7 +87,9 @@ export default function AdmissionDetails() {
       }
     } catch (error) {
       if (error.response?.status !== 404) {
-        enqueueSnackbar("Error fetching admission details", { variant: "error" });
+        enqueueSnackbar("Error fetching admission details", {
+          variant: "error",
+        });
       }
     } finally {
       setIsDataFetched(true);
@@ -78,14 +104,18 @@ export default function AdmissionDetails() {
     try {
       const payload = {
         ...data,
-        userId: menteeId || user?._id, 
+        userId: menteeId || user?._id,
       };
-  
-      const response = await api.post('/v1/admissions', payload);
-      enqueueSnackbar('Admission details saved successfully!', { variant: 'success' });
+
+      const response = await api.post("/v1/admissions", payload);
+      enqueueSnackbar("Admission details saved successfully!", {
+        variant: "success",
+      });
     } catch (error) {
-      console.error('Error saving admission details:', error);
-      enqueueSnackbar('Failed to save admission details.', { variant: 'error' });
+      console.error("Error saving admission details:", error);
+      enqueueSnackbar("Failed to save admission details.", {
+        variant: "error",
+      });
     }
   };
 
@@ -102,7 +132,9 @@ export default function AdmissionDetails() {
         <Grid container spacing={2}>
           <Grid item xs={12}>
             <Card sx={{ p: 3 }}>
-              <Typography variant="h5" gutterBottom>Admission Details</Typography>
+              <Typography variant="h5" gutterBottom>
+                Admission Details
+              </Typography>
               <Divider sx={{ mb: 3 }} />
 
               <Box
@@ -160,7 +192,10 @@ export default function AdmissionDetails() {
                 <RHFTextField name="branchChange.year" label="Year of Change" />
                 <RHFTextField name="branchChange.branch" label="New Branch" />
                 <RHFTextField name="branchChange.usn" label="New USN" />
-                <RHFTextField name="branchChange.collegeId" label="New College ID" />
+                <RHFTextField
+                  name="branchChange.collegeId"
+                  label="New College ID"
+                />
               </Box>
 
               <Typography variant="h6" sx={{ mt: 3 }}>
@@ -174,13 +209,15 @@ export default function AdmissionDetails() {
                       key={doc}
                       control={
                         <Checkbox
+                          checked={documentsSubmitted.includes(doc)}
                           onChange={(e) => {
                             const checked = e.target.checked;
-                            setValue("documentsSubmitted", (prev) =>
-                              checked
-                                ? [...prev, doc]
-                                : prev.filter((item) => item !== doc)
-                            );
+                            const updatedDocs = checked
+                              ? [...(documentsSubmitted || []), doc]
+                              : documentsSubmitted.filter(
+                                  (item) => item !== doc
+                                );
+                            setValue("documentsSubmitted", updatedDocs);
                           }}
                         />
                       }
@@ -191,7 +228,11 @@ export default function AdmissionDetails() {
               </FormControl>
 
               <Stack spacing={3} alignItems="flex-end" sx={{ mt: 3 }}>
-                <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
+                <LoadingButton
+                  type="submit"
+                  variant="contained"
+                  loading={isSubmitting}
+                >
                   Save Changes
                 </LoadingButton>
               </Stack>
