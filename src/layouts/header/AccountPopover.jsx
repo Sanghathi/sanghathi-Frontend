@@ -17,33 +17,49 @@ import { AuthContext } from "../../context/AuthContext";
 
 // ----------------------------------------------------------------------
 
-const MENU_OPTIONS = [
-  {
-    label: "Home",
-    linkTo: "/admin/dashboard",
-  },
-  {
-    label: "Profile",
-    linkTo: "/student/profile",
-  },
-  {
-    label: "Settings",
-    linkTo: "/settings",
-  },
-];
-
 // ----------------------------------------------------------------------
 
 export default function AccountPopover() {
-  const navigate = useNavigate();
-
-  const { user, dispatch } = useContext(AuthContext);
+   const navigate = useNavigate();
+  const { user, dispatch } = useContext(AuthContext); // Now user is available
 
   const isMountedRef = useIsMountedRef();
-
   const { enqueueSnackbar } = useSnackbar();
-
   const [open, setOpen] = useState(null);
+
+  const studentlink = "/student/profile";
+  const facultylink = "/faculty/FacultyProfile";
+  const adminlink = "/admin/dashboard";
+
+  const getprofileconfig = (role) => {
+    switch (role) {
+      case "admin":
+        return adminlink;
+      case "faculty":
+        return facultylink;
+      case "student":
+        return studentlink;
+      default:
+        return null;
+    }
+  };
+
+  const profile = getprofileconfig(user?.roleName); // ✅ safe now that user exists
+
+  const MENU_OPTIONS = [
+    {
+      label: "Home",
+      linkTo: "/admin/dashboard",
+    },
+    {
+      label: "Profile",
+      linkTo: profile,
+    },
+    {
+      label: "Settings",
+      linkTo: "/settings",
+    },
+  ];
 
   const handleOpen = (event) => {
     setOpen(event.currentTarget);

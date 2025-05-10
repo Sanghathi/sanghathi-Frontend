@@ -12,6 +12,7 @@ import {
   LogoutOutlined,
 } from "@mui/icons-material";
 import { useState } from "react";
+
 import AccountPopover from "./AccountPopover";
 import NotificationsPopover from "./NotificationsPopover";
 import FlexBetween from "../../components/FlexBetween";

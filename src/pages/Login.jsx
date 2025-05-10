@@ -177,7 +177,7 @@ const Login = () => {
                     autoComplete="current-password"
                   />
 
-                  <Stack direction="row" justifyContent="space-between">
+                  {/* <Stack direction="row" justifyContent="space-between">
                     <FormControlLabel
                       control={
                         <Radio
@@ -208,7 +208,7 @@ const Login = () => {
                       }
                       label="Student"
                     />
-                  </Stack>
+                  </Stack> */}
 
                   <Button
                     type="submit"
