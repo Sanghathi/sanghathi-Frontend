@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 
 import { HelmetProvider } from "react-helmet-async";
-
+import { AuthContext } from "./context/AuthContext";
 import { BrowserRouter as Router } from "react-router-dom";
 import { AuthContextProvider } from "./context/AuthContext";
 import { SettingsProvider } from "./context/SettingsContext";
@@ -22,4 +22,5 @@ root.render(
       </SettingsProvider>
     </HelmetProvider>
   </AuthContextProvider>
+
 );
